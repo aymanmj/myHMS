@@ -16,9 +16,11 @@ import { Plus, Bed as BedIcon, Activity, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
+import { usePermissions } from "@/hooks/usePermissions";
 
 export default function Admissions() {
   const { toast } = useToast();
+  const { canCreate } = usePermissions();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
   const { data: admissions, isLoading } = useQuery({
@@ -112,12 +114,14 @@ export default function Admissions() {
           <p className="text-muted-foreground">تنويم المرضى وإدارة الأسرة</p>
         </div>
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button data-testid="button-add-admission">
-              <Plus className="h-4 w-4 ml-2" />
-              تنويم مريض جديد
-            </Button>
-          </DialogTrigger>
+          {canCreate("admissions") && (
+            <DialogTrigger asChild>
+              <Button data-testid="button-add-admission">
+                <Plus className="h-4 w-4 ml-2" />
+                تنويم مريض جديد
+              </Button>
+            </DialogTrigger>
+          )}
           <DialogContent className="max-w-2xl" dir="rtl">
             <DialogHeader>
               <DialogTitle>تنويم مريض جديد</DialogTitle>

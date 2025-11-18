@@ -16,9 +16,11 @@ import { Plus, Beaker, Clock, CheckCircle, XCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
+import { usePermissions } from "@/hooks/usePermissions";
 
 export default function Laboratory() {
   const { toast } = useToast();
+  const { canCreate } = usePermissions();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
   const { data: labTests, isLoading } = useQuery({
@@ -108,12 +110,14 @@ export default function Laboratory() {
           <p className="text-muted-foreground">طلبات التحاليل والنتائج الطبية</p>
         </div>
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button data-testid="button-add-lab-test">
-              <Plus className="h-4 w-4 ml-2" />
-              طلب تحليل جديد
-            </Button>
-          </DialogTrigger>
+          {canCreate("labTests") && (
+            <DialogTrigger asChild>
+              <Button data-testid="button-add-lab-test">
+                <Plus className="h-4 w-4 ml-2" />
+                طلب تحليل جديد
+              </Button>
+            </DialogTrigger>
+          )}
           <DialogContent className="max-w-2xl" dir="rtl">
             <DialogHeader>
               <DialogTitle>طلب تحليل جديد</DialogTitle>

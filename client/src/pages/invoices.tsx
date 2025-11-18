@@ -16,9 +16,11 @@ import { Plus, DollarSign, TrendingUp, AlertCircle, CheckCircle } from "lucide-r
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
+import { usePermissions } from "@/hooks/usePermissions";
 
 export default function Invoices() {
   const { toast } = useToast();
+  const { canCreate } = usePermissions();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
   const { data: invoices, isLoading } = useQuery({
@@ -106,12 +108,14 @@ export default function Invoices() {
           <p className="text-muted-foreground">المحاسبة والمدفوعات</p>
         </div>
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button data-testid="button-add-invoice">
-              <Plus className="h-4 w-4 ml-2" />
-              إنشاء فاتورة جديدة
-            </Button>
-          </DialogTrigger>
+          {canCreate("invoices") && (
+            <DialogTrigger asChild>
+              <Button data-testid="button-add-invoice">
+                <Plus className="h-4 w-4 ml-2" />
+                إنشاء فاتورة جديدة
+              </Button>
+            </DialogTrigger>
+          )}
           <DialogContent className="max-w-2xl" dir="rtl">
             <DialogHeader>
               <DialogTitle>إنشاء فاتورة جديدة</DialogTitle>
