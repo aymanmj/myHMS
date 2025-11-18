@@ -17,11 +17,14 @@ import Radiology from "@/pages/radiology";
 import HR from "@/pages/hr";
 import Payroll from "@/pages/payroll";
 import { useAuth } from "@/hooks/useAuth";
-import { SidebarProvider, SidebarTrigger, Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
-import { Home, Users, Calendar, Activity, Pill, FileText, LogOut, Stethoscope, Building2, DollarSign, UserCog } from "lucide-react";
+import { Home, Users, Calendar, Activity, Pill, FileText, LogOut, Stethoscope, Building2, DollarSign, UserCog, Menu, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import { useLocation } from "wouter";
 
-function AppSidebar() {
+function AppSidebar({ isCollapsed, onToggle }: { isCollapsed: boolean; onToggle: () => void }) {
+  const [location] = useLocation();
+  
   const menuItems = [
     { title: "الرئيسية", url: "/", icon: Home },
     { title: "المرضى", url: "/patients", icon: Users },
@@ -37,29 +40,58 @@ function AppSidebar() {
   ];
 
   return (
-    <Sidebar side="right" variant="sidebar" collapsible="icon">
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-lg font-bold text-primary mb-4">
-            نظام إدارة المستشفيات
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {menuItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <a href={item.url}>
-                      <item.icon className="ml-2" />
-                      <span>{item.title}</span>
-                    </a>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-    </Sidebar>
+    <aside
+      className={`fixed top-0 right-0 h-full bg-card border-l border-border transition-all duration-300 z-10 ${
+        isCollapsed ? "w-20" : "w-64"
+      }`}
+      data-testid="sidebar"
+      aria-label="قائمة التنقل الرئيسية"
+    >
+      <div className="flex flex-col h-full">
+        <div className="p-4 border-b border-border flex items-center justify-between">
+          {!isCollapsed && (
+            <h2 className="text-lg font-bold text-primary">نظام إدارة المستشفيات</h2>
+          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onToggle}
+            className="flex-shrink-0"
+            data-testid="button-sidebar-toggle-internal"
+            aria-label={isCollapsed ? "توسيع القائمة الجانبية" : "طي القائمة الجانبية"}
+            title={isCollapsed ? "توسيع القائمة" : "طي القائمة"}
+          >
+            {isCollapsed ? <ChevronLeft className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
+          </Button>
+        </div>
+
+        <nav className="flex-1 overflow-y-auto p-4">
+          <ul className="space-y-2">
+            {menuItems.map((item) => {
+              const isActive = location === item.url;
+              const Icon = item.icon;
+              
+              return (
+                <li key={item.url}>
+                  <a
+                    href={item.url}
+                    className={`flex items-center gap-3 px-3 py-2 rounded-md transition-colors hover-elevate active-elevate-2 ${
+                      isActive ? "bg-primary text-primary-foreground" : "text-foreground"
+                    } ${isCollapsed ? "justify-center" : ""}`}
+                    data-testid={`link-sidebar-${item.url.substring(1) || "home"}`}
+                    aria-label={item.title}
+                    title={item.title}
+                  >
+                    <Icon className={`h-5 w-5 flex-shrink-0 ${isCollapsed ? "" : "ml-2"}`} aria-hidden="true" />
+                    {!isCollapsed && <span className="whitespace-nowrap">{item.title}</span>}
+                  </a>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+      </div>
+    </aside>
   );
 }
 
@@ -93,47 +125,61 @@ function Router() {
 
 function AppContent() {
   const { isAuthenticated, isLoading, user } = useAuth();
-  
-  const style = {
-    "--sidebar-width": "20rem",
-    "--sidebar-width-icon": "4rem",
-  };
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   if (isLoading || !isAuthenticated) {
     return <Router />;
   }
 
   return (
-    <SidebarProvider style={style as React.CSSProperties} defaultOpen={true}>
-      <div className="flex h-screen w-full" dir="rtl">
-        <div className="flex flex-col flex-1 min-w-0">
-          <header className="flex items-center justify-between p-4 border-b bg-card">
-            <div className="flex items-center gap-4">
-              <SidebarTrigger data-testid="button-sidebar-toggle" />
-              <h2 className="text-lg font-semibold">لوحة التحكم</h2>
-            </div>
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-muted-foreground" data-testid="text-user-name">
-                {user && typeof user === 'object' ? (user as any).firstName || (user as any).email : 'مستخدم'}
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => window.location.href = "/api/logout"}
-                data-testid="button-logout"
-              >
-                <LogOut className="h-4 w-4 ml-2" />
-                تسجيل الخروج
-              </Button>
-            </div>
-          </header>
-          <main className="flex-1 overflow-auto bg-background">
-            <Router />
-          </main>
+    <div className="h-screen w-full flex flex-col" dir="rtl">
+      <header 
+        className={`flex items-center justify-between p-4 border-b bg-card z-30 transition-all duration-300 ${
+          isSidebarCollapsed ? "ml-20" : "ml-64"
+        }`}
+        style={{ marginRight: isSidebarCollapsed ? "5rem" : "16rem" }}
+      >
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+            data-testid="button-sidebar-toggle"
+            aria-label={isSidebarCollapsed ? "توسيع القائمة الجانبية" : "طي القائمة الجانبية"}
+            title={isSidebarCollapsed ? "توسيع القائمة" : "طي القائمة"}
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+          <h2 className="text-lg font-semibold">لوحة التحكم</h2>
         </div>
-        <AppSidebar />
+        <div className="flex items-center gap-4">
+          <span className="text-sm text-muted-foreground" data-testid="text-user-name">
+            {user && typeof user === 'object' ? (user as any).firstName || (user as any).email : 'مستخدم'}
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => window.location.href = "/api/logout"}
+            data-testid="button-logout"
+          >
+            <LogOut className="h-4 w-4 ml-2" />
+            تسجيل الخروج
+          </Button>
+        </div>
+      </header>
+
+      <div className="flex-1 flex overflow-hidden">
+        <main
+          className={`flex-1 overflow-auto bg-background transition-all duration-300 ${
+            isSidebarCollapsed ? "ml-20" : "ml-64"
+          }`}
+          style={{ marginRight: isSidebarCollapsed ? "5rem" : "16rem" }}
+        >
+          <Router />
+        </main>
+        <AppSidebar isCollapsed={isSidebarCollapsed} onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)} />
       </div>
-    </SidebarProvider>
+    </div>
   );
 }
 
