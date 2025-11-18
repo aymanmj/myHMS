@@ -22,24 +22,21 @@ export default function Pharmacy() {
   const { canCreate } = usePermissions();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
-  const { data: medications, isLoading } = useQuery({
+  const { data: medications, isLoading } = useQuery<Medication[]>({
     queryKey: ["/api/medications"],
   });
 
-  const { data: lowStockMeds } = useQuery({
+  const { data: lowStockMeds } = useQuery<Medication[]>({
     queryKey: ["/api/medications/low-stock"],
   });
 
-  const { data: expiringMeds } = useQuery({
+  const { data: expiringMeds } = useQuery<Medication[]>({
     queryKey: ["/api/medications/expiring"],
   });
 
   const addMedicationMutation = useMutation({
     mutationFn: async (data: InsertMedication) => {
-      return await apiRequest("/api/medications", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
+      return await apiRequest("POST", "/api/medications", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/medications"] });
@@ -62,22 +59,15 @@ export default function Pharmacy() {
   const form = useForm<InsertMedication>({
     resolver: zodResolver(insertMedicationSchema),
     defaultValues: {
-      nameAr: "",
-      nameEn: "",
+      name: "",
       genericName: "",
       barcode: "",
       category: "",
       manufacturer: "",
-      dosageForm: "",
-      strength: "",
+      unitPrice: "0",
       stockQuantity: 0,
       minStockLevel: 10,
-      unitPrice: "0",
       expiryDate: "",
-      batchNumber: "",
-      storageConditions: "",
-      requiresPrescription: true,
-      notes: "",
     },
   });
 
@@ -122,34 +112,19 @@ export default function Pharmacy() {
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="nameAr"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>الاسم بالعربية</FormLabel>
-                        <FormControl>
-                          <Input {...field} data-testid="input-name-ar" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="nameEn"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>الاسم بالإنجليزية</FormLabel>
-                        <FormControl>
-                          <Input {...field} data-testid="input-name-en" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>اسم الدواء</FormLabel>
+                      <FormControl>
+                        <Input {...field} data-testid="input-name" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
@@ -172,7 +147,7 @@ export default function Pharmacy() {
                       <FormItem>
                         <FormLabel>الباركود</FormLabel>
                         <FormControl>
-                          <Input {...field} data-testid="input-barcode" />
+                          <Input {...field} value={field.value || ""} data-testid="input-barcode" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -188,7 +163,7 @@ export default function Pharmacy() {
                       <FormItem>
                         <FormLabel>التصنيف</FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="مثال: مسكنات" data-testid="input-category" />
+                          <Input {...field} value={field.value || ""} placeholder="مثال: مسكنات" data-testid="input-category" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -201,49 +176,7 @@ export default function Pharmacy() {
                       <FormItem>
                         <FormLabel>الشركة المصنعة</FormLabel>
                         <FormControl>
-                          <Input {...field} data-testid="input-manufacturer" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="grid grid-cols-3 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="dosageForm"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>الشكل الدوائي</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="أقراص، شراب، حقن" data-testid="input-dosage-form" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="strength"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>التركيز</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="500mg" data-testid="input-strength" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="batchNumber"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>رقم الدفعة</FormLabel>
-                        <FormControl>
-                          <Input {...field} data-testid="input-batch-number" />
+                          <Input {...field} value={field.value || ""} data-testid="input-manufacturer" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -310,35 +243,7 @@ export default function Pharmacy() {
                     <FormItem>
                       <FormLabel>تاريخ انتهاء الصلاحية</FormLabel>
                       <FormControl>
-                        <Input type="date" {...field} data-testid="input-expiry-date" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="storageConditions"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>ظروف التخزين</FormLabel>
-                      <FormControl>
-                        <Input {...field} value={field.value || ""} placeholder="درجة حرارة الغرفة" data-testid="input-storage" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="notes"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>ملاحظات</FormLabel>
-                      <FormControl>
-                        <Input {...field} value={field.value || ""} data-testid="input-notes" />
+                        <Input type="date" {...field} value={field.value || ""} data-testid="input-expiry-date" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -450,7 +355,6 @@ export default function Pharmacy() {
                 <TableHead>الباركود</TableHead>
                 <TableHead>الاسم</TableHead>
                 <TableHead>التصنيف</TableHead>
-                <TableHead>الشكل الدوائي</TableHead>
                 <TableHead>المخزون</TableHead>
                 <TableHead>السعر</TableHead>
                 <TableHead>انتهاء الصلاحية</TableHead>
@@ -460,19 +364,18 @@ export default function Pharmacy() {
             <TableBody>
               {medications?.map((medication: Medication) => {
                 const isLowStock = medication.stockQuantity <= medication.minStockLevel;
-                const isExpiring = new Date(medication.expiryDate) <= new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+                const isExpiring = medication.expiryDate && new Date(medication.expiryDate) <= new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
                 
                 return (
                   <TableRow key={medication.id} data-testid={`row-medication-${medication.id}`}>
                     <TableCell className="font-mono">{medication.barcode}</TableCell>
                     <TableCell>
-                      <div className="font-medium">{medication.nameAr}</div>
-                      <div className="text-sm text-muted-foreground">{medication.nameEn}</div>
+                      <div className="font-medium">{medication.name}</div>
+                      {medication.genericName && (
+                        <div className="text-sm text-muted-foreground">{medication.genericName}</div>
+                      )}
                     </TableCell>
                     <TableCell>{medication.category}</TableCell>
-                    <TableCell>
-                      {medication.dosageForm} {medication.strength}
-                    </TableCell>
                     <TableCell>
                       <div className={isLowStock ? "text-destructive font-semibold" : ""}>
                         {medication.stockQuantity}
@@ -480,7 +383,7 @@ export default function Pharmacy() {
                     </TableCell>
                     <TableCell>{medication.unitPrice} ر.س</TableCell>
                     <TableCell className={isExpiring ? "text-destructive" : ""}>
-                      {format(new Date(medication.expiryDate), "dd/MM/yyyy", { locale: ar })}
+                      {medication.expiryDate ? format(new Date(medication.expiryDate), "dd/MM/yyyy", { locale: ar }) : "-"}
                     </TableCell>
                     <TableCell>
                       {isLowStock && <Badge variant="destructive">مخزون منخفض</Badge>}
