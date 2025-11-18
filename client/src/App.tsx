@@ -9,6 +9,8 @@ import Dashboard from "@/pages/dashboard";
 import Patients from "@/pages/patients";
 import Appointments from "@/pages/appointments";
 import Pharmacy from "@/pages/pharmacy";
+import Invoices from "@/pages/invoices";
+import Admissions from "@/pages/admissions";
 import { useAuth } from "@/hooks/useAuth";
 import { SidebarProvider, SidebarTrigger, Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 import { Home, Users, Calendar, Activity, Pill, FileText, LogOut, Stethoscope, Building2, DollarSign, UserCog } from "lucide-react";
@@ -69,6 +71,8 @@ function Router() {
           <Route path="/patients" component={Patients} />
           <Route path="/appointments" component={Appointments} />
           <Route path="/pharmacy" component={Pharmacy} />
+          <Route path="/invoices" component={Invoices} />
+          <Route path="/admissions" component={Admissions} />
           {/* Add more routes here as pages are created */}
         </>
       )}
@@ -101,7 +105,7 @@ function AppContent() {
             </div>
             <div className="flex items-center gap-4">
               <span className="text-sm text-muted-foreground" data-testid="text-user-name">
-                {user?.firstName || user?.email}
+                {user && typeof user === 'object' ? (user as any).firstName || (user as any).email : 'مستخدم'}
               </span>
               <Button
                 variant="ghost"
