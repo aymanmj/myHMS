@@ -6,9 +6,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
 import Dashboard from "@/pages/dashboard";
+import Patients from "@/pages/patients";
 import { useAuth } from "@/hooks/useAuth";
 import { SidebarProvider, SidebarTrigger, Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
-import { Home, Users, Calendar, Activity, Pill, FileText, Settings, LogOut, Stethoscope, Building2, DollarSign, UserCog } from "lucide-react";
+import { Home, Users, Calendar, Activity, Pill, FileText, LogOut, Stethoscope, Building2, DollarSign, UserCog } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 function AppSidebar() {
@@ -63,6 +64,7 @@ function Router() {
       ) : (
         <>
           <Route path="/" component={Dashboard} />
+          <Route path="/patients" component={Patients} />
           {/* Add more routes here as pages are created */}
         </>
       )}
@@ -71,7 +73,7 @@ function Router() {
   );
 }
 
-export default function App() {
+function AppContent() {
   const { isAuthenticated, isLoading, user } = useAuth();
   
   const style = {
@@ -80,49 +82,48 @@ export default function App() {
   };
 
   if (isLoading || !isAuthenticated) {
-    return (
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Router />
-          <Toaster />
-        </TooltipProvider>
-      </QueryClientProvider>
-    );
+    return <Router />;
   }
 
   return (
+    <SidebarProvider style={style as React.CSSProperties}>
+      <div className="flex h-screen w-full" dir="rtl">
+        <AppSidebar />
+        <div className="flex flex-col flex-1">
+          <header className="flex items-center justify-between p-4 border-b bg-card">
+            <div className="flex items-center gap-4">
+              <SidebarTrigger data-testid="button-sidebar-toggle" />
+              <h2 className="text-lg font-semibold">لوحة التحكم</h2>
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-muted-foreground" data-testid="text-user-name">
+                {user?.firstName || user?.email}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => window.location.href = "/api/logout"}
+                data-testid="button-logout"
+              >
+                <LogOut className="h-4 w-4 ml-2" />
+                تسجيل الخروج
+              </Button>
+            </div>
+          </header>
+          <main className="flex-1 overflow-auto bg-background">
+            <Router />
+          </main>
+        </div>
+      </div>
+    </SidebarProvider>
+  );
+}
+
+export default function App() {
+  return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <SidebarProvider style={style as React.CSSProperties}>
-          <div className="flex h-screen w-full" dir="rtl">
-            <AppSidebar />
-            <div className="flex flex-col flex-1">
-              <header className="flex items-center justify-between p-4 border-b bg-card">
-                <div className="flex items-center gap-4">
-                  <SidebarTrigger data-testid="button-sidebar-toggle" />
-                  <h2 className="text-lg font-semibold">لوحة التحكم</h2>
-                </div>
-                <div className="flex items-center gap-4">
-                  <span className="text-sm text-muted-foreground" data-testid="text-user-name">
-                    {user?.firstName || user?.email}
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => window.location.href = "/api/logout"}
-                    data-testid="button-logout"
-                  >
-                    <LogOut className="h-4 w-4 ml-2" />
-                    تسجيل الخروج
-                  </Button>
-                </div>
-              </header>
-              <main className="flex-1 overflow-auto bg-background">
-                <Router />
-              </main>
-            </div>
-          </div>
-        </SidebarProvider>
+        <AppContent />
         <Toaster />
       </TooltipProvider>
     </QueryClientProvider>
