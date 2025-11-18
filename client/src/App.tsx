@@ -7,6 +7,8 @@ import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
 import Dashboard from "@/pages/dashboard";
 import Patients from "@/pages/patients";
+import Appointments from "@/pages/appointments";
+import Pharmacy from "@/pages/pharmacy";
 import { useAuth } from "@/hooks/useAuth";
 import { SidebarProvider, SidebarTrigger, Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 import { Home, Users, Calendar, Activity, Pill, FileText, LogOut, Stethoscope, Building2, DollarSign, UserCog } from "lucide-react";
@@ -65,6 +67,8 @@ function Router() {
         <>
           <Route path="/" component={Dashboard} />
           <Route path="/patients" component={Patients} />
+          <Route path="/appointments" component={Appointments} />
+          <Route path="/pharmacy" component={Pharmacy} />
           {/* Add more routes here as pages are created */}
         </>
       )}
