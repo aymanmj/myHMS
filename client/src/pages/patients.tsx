@@ -30,10 +30,7 @@ export default function Patients() {
 
   const addPatientMutation = useMutation({
     mutationFn: async (data: InsertPatient) => {
-      return await apiRequest("/api/patients", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
+      return await apiRequest("POST", "/api/patients", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/patients"] });
