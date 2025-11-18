@@ -37,7 +37,7 @@ function AppSidebar() {
   ];
 
   return (
-    <Sidebar>
+    <Sidebar side="right" variant="sidebar" collapsible="icon">
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel className="text-lg font-bold text-primary mb-4">
@@ -106,7 +106,6 @@ function AppContent() {
   return (
     <SidebarProvider style={style as React.CSSProperties}>
       <div className="flex h-screen w-full" dir="rtl">
-        <AppSidebar />
         <div className="flex flex-col flex-1">
           <header className="flex items-center justify-between p-4 border-b bg-card">
             <div className="flex items-center gap-4">
@@ -132,6 +131,7 @@ function AppContent() {
             <Router />
           </main>
         </div>
+        <AppSidebar />
       </div>
     </SidebarProvider>
   );
