@@ -51,16 +51,48 @@ function updateUserSession(
   user.expires_at = user.claims?.exp;
 }
 
+const ROLE_WHITELIST: Record<string, string> = {
+  "admin@hospital.test": "admin",
+  "admin@replit.com": "admin",
+  "doctor@hospital.test": "doctor",
+  "nurse@hospital.test": "nurse",
+  "pharmacist@hospital.test": "pharmacist",
+  "lab@hospital.test": "lab_tech",
+  "radiology@hospital.test": "radiology_tech",
+};
+
+function getRoleFromEmail(email: string | undefined): string {
+  if (!email) return "receptionist";
+  return ROLE_WHITELIST[email.toLowerCase()] || "receptionist";
+}
+
 async function upsertUser(
   claims: any,
-) {
-  await storage.upsertUser({
-    id: claims["sub"],
-    email: claims["email"],
+): Promise<import("@shared/schema").User> {
+  const email = claims["email"];
+  const sub = claims["sub"];
+  
+  const existingUser = await storage.getUser(sub);
+  
+  let role: string;
+  if (claims["role"]) {
+    role = claims["role"];
+  } else if (existingUser && existingUser.role !== "receptionist") {
+    role = existingUser.role;
+  } else {
+    role = getRoleFromEmail(email);
+  }
+  
+  const user = await storage.upsertUser({
+    id: sub,
+    email,
     firstName: claims["first_name"],
     lastName: claims["last_name"],
     profileImageUrl: claims["profile_image_url"],
+    role,
   });
+  
+  return user;
 }
 
 export async function setupAuth(app: Express) {
@@ -75,9 +107,20 @@ export async function setupAuth(app: Express) {
     tokens: client.TokenEndpointResponse & client.TokenEndpointResponseHelpers,
     verified: passport.AuthenticateCallback
   ) => {
-    const user = {};
+    const user: any = {};
     updateUserSession(user, tokens);
-    await upsertUser(tokens.claims());
+    
+    const claims = tokens.claims();
+    if (claims) {
+      const dbUser = await upsertUser(claims);
+      if (dbUser) {
+        user.role = dbUser.role;
+        user.email = dbUser.email;
+        user.firstName = dbUser.firstName;
+        user.lastName = dbUser.lastName;
+      }
+    }
+    
     verified(null, user);
   };
 

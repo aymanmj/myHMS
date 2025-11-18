@@ -50,6 +50,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/users', isAuthenticated, requireRole("admin"), async (req: any, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      res.json(users);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+
+  app.put('/api/users/:id/role', isAuthenticated, requireRole("admin"), async (req: any, res) => {
+    try {
+      const { role } = req.body;
+      const validRoles = ["admin", "doctor", "nurse", "pharmacist", "lab_tech", "radiology_tech", "receptionist"];
+      if (!validRoles.includes(role)) {
+        return res.status(400).json({ message: "Invalid role" });
+      }
+      
+      await storage.updateUserRole(req.params.id, role);
+      res.json({ success: true, message: "Role updated successfully" });
+    } catch (error: any) {
+      console.error("Error updating user role:", error);
+      res.status(500).json({ message: error.message || "Failed to update user role" });
+    }
+  });
+
   // ============================================
   // Patient routes
   // ============================================
