@@ -77,7 +77,7 @@ export default function Invoices() {
       overdue: { label: "متأخرة", variant: "destructive" },
     };
     const { label, variant } = statusMap[status] || { label: status, variant: "default" as const };
-    return <Badge variant={variant}>{label}</Badge>;
+    return <Badge variant={variant} data-testid={`badge-status-${status}`}>{label}</Badge>;
   };
 
   if (isLoading) {
@@ -377,21 +377,21 @@ export default function Invoices() {
                 
                 return (
                   <TableRow key={invoice.id} data-testid={`row-invoice-${invoice.id}`}>
-                    <TableCell>
+                    <TableCell data-testid={`cell-patient-${invoice.id}`}>
                       {patient ? `${patient.firstNameAr} ${patient.familyNameAr}` : "غير معروف"}
                     </TableCell>
-                    <TableCell>
+                    <TableCell data-testid={`cell-date-${invoice.id}`}>
                       {invoice.invoiceDate && format(new Date(invoice.invoiceDate), "dd/MM/yyyy", { locale: ar })}
                     </TableCell>
-                    <TableCell>{parseFloat(invoice.total || "0").toLocaleString('ar-SA', { maximumFractionDigits: 2 })} ر.س</TableCell>
-                    <TableCell className="text-green-600">
+                    <TableCell data-testid={`cell-total-${invoice.id}`}>{parseFloat(invoice.total || "0").toLocaleString('ar-SA', { maximumFractionDigits: 2 })} ر.س</TableCell>
+                    <TableCell className="text-green-600" data-testid={`cell-paid-${invoice.id}`}>
                       {parseFloat(invoice.amountPaid || "0").toLocaleString('ar-SA', { maximumFractionDigits: 2 })} ر.س
                     </TableCell>
-                    <TableCell className={remaining > 0 ? "text-destructive font-semibold" : ""}>
+                    <TableCell className={remaining > 0 ? "text-destructive font-semibold" : ""} data-testid={`cell-remaining-${invoice.id}`}>
                       {remaining.toLocaleString('ar-SA', { maximumFractionDigits: 2 })} ر.س
                     </TableCell>
-                    <TableCell>{invoice.paymentMethod || "-"}</TableCell>
-                    <TableCell>{getStatusBadge(invoice.paymentStatus)}</TableCell>
+                    <TableCell data-testid={`cell-payment-method-${invoice.id}`}>{invoice.paymentMethod || "-"}</TableCell>
+                    <TableCell data-testid={`cell-status-${invoice.id}`}>{getStatusBadge(invoice.paymentStatus)}</TableCell>
                   </TableRow>
                 );
               })}

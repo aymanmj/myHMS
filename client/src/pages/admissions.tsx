@@ -80,7 +80,7 @@ export default function Admissions() {
       discharged: { label: "مخرج", variant: "secondary" },
     };
     const { label, variant } = statusMap[status] || { label: status, variant: "default" as const };
-    return <Badge variant={variant}>{label}</Badge>;
+    return <Badge variant={variant} data-testid={`badge-status-${status}`}>{label}</Badge>;
   };
 
   if (isLoading) {
@@ -352,21 +352,21 @@ export default function Admissions() {
                 
                 return (
                   <TableRow key={admission.id} data-testid={`row-admission-${admission.id}`}>
-                    <TableCell>
+                    <TableCell data-testid={`cell-patient-${admission.id}`}>
                       {patient ? `${patient.firstNameAr} ${patient.familyNameAr}` : "غير معروف"}
                     </TableCell>
-                    <TableCell>
+                    <TableCell data-testid={`cell-bed-${admission.id}`}>
                       {bed ? `${bed.bedNumber} - ${bed.roomNumber || bed.ward}` : "غير محدد"}
                     </TableCell>
-                    <TableCell>
+                    <TableCell data-testid={`cell-doctor-${admission.id}`}>
                       {doctor ? `د. ${doctor.firstNameAr} ${doctor.familyNameAr}` : "غير معروف"}
                     </TableCell>
-                    <TableCell>
+                    <TableCell data-testid={`cell-date-${admission.id}`}>
                       {admission.admissionDate && format(new Date(admission.admissionDate), "dd/MM/yyyy", { locale: ar })}
                     </TableCell>
-                    <TableCell>{admission.reason}</TableCell>
-                    <TableCell>{admission.diagnosis || "-"}</TableCell>
-                    <TableCell>{getStatusBadge(admission.status)}</TableCell>
+                    <TableCell data-testid={`cell-reason-${admission.id}`}>{admission.reason}</TableCell>
+                    <TableCell data-testid={`cell-diagnosis-${admission.id}`}>{admission.diagnosis || "-"}</TableCell>
+                    <TableCell data-testid={`cell-status-${admission.id}`}>{getStatusBadge(admission.status)}</TableCell>
                   </TableRow>
                 );
               })}
