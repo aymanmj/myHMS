@@ -15,9 +15,11 @@ import { Plus, AlertTriangle, Package } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
+import { usePermissions } from "@/hooks/usePermissions";
 
 export default function Pharmacy() {
   const { toast } = useToast();
+  const { canCreate } = usePermissions();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
   const { data: medications, isLoading } = useQuery({
@@ -103,12 +105,14 @@ export default function Pharmacy() {
           <p className="text-muted-foreground">إدارة المخزون والوصفات الطبية</p>
         </div>
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button data-testid="button-add-medication">
-              <Plus className="h-4 w-4 ml-2" />
-              إضافة دواء جديد
-            </Button>
-          </DialogTrigger>
+          {canCreate("medications") && (
+            <DialogTrigger asChild>
+              <Button data-testid="button-add-medication">
+                <Plus className="h-4 w-4 ml-2" />
+                إضافة دواء جديد
+              </Button>
+            </DialogTrigger>
+          )}
           <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto" dir="rtl">
             <DialogHeader>
               <DialogTitle>إضافة دواء جديد</DialogTitle>

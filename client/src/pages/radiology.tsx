@@ -16,9 +16,11 @@ import { Plus, Radio, Clock, CheckCircle, XCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
+import { usePermissions } from "@/hooks/usePermissions";
 
 export default function Radiology() {
   const { toast } = useToast();
+  const { canCreate } = usePermissions();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
   const { data: radiologyTests, isLoading } = useQuery({
@@ -108,12 +110,14 @@ export default function Radiology() {
           <p className="text-muted-foreground">طلبات الأشعة والتصوير الطبي</p>
         </div>
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button data-testid="button-add-radiology-test">
-              <Plus className="h-4 w-4 ml-2" />
-              طلب أشعة جديد
-            </Button>
-          </DialogTrigger>
+          {canCreate("radiologyTests") && (
+            <DialogTrigger asChild>
+              <Button data-testid="button-add-radiology-test">
+                <Plus className="h-4 w-4 ml-2" />
+                طلب أشعة جديد
+              </Button>
+            </DialogTrigger>
+          )}
           <DialogContent className="max-w-2xl" dir="rtl">
             <DialogHeader>
               <DialogTitle>طلب أشعة جديد</DialogTitle>

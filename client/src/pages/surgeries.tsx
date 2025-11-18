@@ -16,9 +16,11 @@ import { Plus, Scissors, Calendar, CheckCircle, AlertCircle } from "lucide-react
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
+import { usePermissions } from "@/hooks/usePermissions";
 
 export default function Surgeries() {
   const { toast } = useToast();
+  const { canCreate } = usePermissions();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
   const { data: surgeries, isLoading } = useQuery({
@@ -109,12 +111,14 @@ export default function Surgeries() {
           <p className="text-muted-foreground">جدولة ومتابعة العمليات الجراحية</p>
         </div>
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button data-testid="button-add-surgery">
-              <Plus className="h-4 w-4 ml-2" />
-              إضافة عملية جراحية
-            </Button>
-          </DialogTrigger>
+          {canCreate("surgeries") && (
+            <DialogTrigger asChild>
+              <Button data-testid="button-add-surgery">
+                <Plus className="h-4 w-4 ml-2" />
+                إضافة عملية جراحية
+              </Button>
+            </DialogTrigger>
+          )}
           <DialogContent className="max-w-2xl" dir="rtl">
             <DialogHeader>
               <DialogTitle>عملية جراحية جديدة</DialogTitle>
