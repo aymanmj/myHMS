@@ -16,8 +16,9 @@ import Laboratory from "@/pages/laboratory";
 import Radiology from "@/pages/radiology";
 import HR from "@/pages/hr";
 import Payroll from "@/pages/payroll";
+import Prescriptions from "@/pages/prescriptions";
 import { useAuth } from "@/hooks/useAuth";
-import { Home, Users, Calendar, Activity, Pill, FileText, LogOut, Stethoscope, Building2, DollarSign, UserCog, Menu, ChevronLeft, ChevronRight } from "lucide-react";
+import { Home, Users, Calendar, Activity, Pill, FileText, LogOut, Stethoscope, Building2, DollarSign, UserCog, Menu, ChevronLeft, ChevronRight, ClipboardList } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useLocation } from "wouter";
@@ -34,6 +35,7 @@ function AppSidebar({ isCollapsed, onToggle }: { isCollapsed: boolean; onToggle:
     { title: "التنويم", url: "/admissions", icon: Activity, resource: "admissions" as const },
     { title: "العمليات", url: "/surgeries", icon: Stethoscope, resource: "surgeries" as const },
     { title: "الصيدلية", url: "/pharmacy", icon: Pill, resource: "medications" as const },
+    { title: "الوصفات الطبية", url: "/prescriptions", icon: ClipboardList, resource: "prescriptions" as const },
     { title: "المعامل", url: "/laboratory", icon: FileText, resource: "labTests" as const },
     { title: "الأشعة", url: "/radiology", icon: Building2, resource: "radiologyTests" as const },
     { title: "الموارد البشرية", url: "/hr", icon: UserCog, resource: "staff" as const },
@@ -114,6 +116,7 @@ function Router() {
           <Route path="/patients" component={Patients} />
           <Route path="/appointments" component={Appointments} />
           <Route path="/pharmacy" component={Pharmacy} />
+          <Route path="/prescriptions" component={Prescriptions} />
           <Route path="/invoices" component={Invoices} />
           <Route path="/admissions" component={Admissions} />
           <Route path="/surgeries" component={Surgeries} />

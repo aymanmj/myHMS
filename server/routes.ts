@@ -403,6 +403,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/prescriptions/patient/:patientId", isAuthenticated, requirePermission("prescriptions", "read"), async (req, res) => {
+    try {
+      const prescriptions = await storage.getPrescriptionsByPatient(req.params.patientId);
+      res.json(prescriptions);
+    } catch (error) {
+      console.error("Error fetching patient prescriptions:", error);
+      res.status(500).json({ message: "Failed to fetch patient prescriptions" });
+    }
+  });
+
   app.post("/api/prescriptions", isAuthenticated, requirePermission("prescriptions", "create"), async (req, res) => {
     try {
       const validatedData = insertPrescriptionSchema.parse(req.body);
