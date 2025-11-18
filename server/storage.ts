@@ -160,6 +160,7 @@ export interface IStorage {
   // Payroll operations
   // ============================================
   getPayrollByStaff(staffId: string): Promise<Payroll[]>;
+  getAllPayroll(): Promise<Payroll[]>;
   getPayrollByMonth(month: number, year: number): Promise<Payroll[]>;
   createPayroll(payroll: InsertPayroll): Promise<Payroll>;
   updatePayroll(id: string, payroll: Partial<InsertPayroll>): Promise<Payroll>;
@@ -599,6 +600,13 @@ export class DatabaseStorage implements IStorage {
   
   async getPayrollByStaff(staffId: string): Promise<Payroll[]> {
     return await db.select().from(payroll).where(eq(payroll.staffId, staffId));
+  }
+
+  async getAllPayroll(): Promise<Payroll[]> {
+    return await db
+      .select()
+      .from(payroll)
+      .orderBy(payroll.year, payroll.month);
   }
 
   async getPayrollByMonth(month: number, year: number): Promise<Payroll[]> {

@@ -530,14 +530,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ============================================
   app.get("/api/payroll", isAuthenticated, async (req, res) => {
     try {
-      const month = parseInt(req.query.month as string);
-      const year = parseInt(req.query.year as string);
+      const month = req.query.month ? parseInt(req.query.month as string) : undefined;
+      const year = req.query.year ? parseInt(req.query.year as string) : undefined;
       
       if (month && year) {
         const payroll = await storage.getPayrollByMonth(month, year);
         res.json(payroll);
       } else {
-        res.status(400).json({ message: "Month and year required" });
+        const allPayroll = await storage.getAllPayroll();
+        res.json(allPayroll);
       }
     } catch (error) {
       console.error("Error fetching payroll:", error);

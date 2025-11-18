@@ -13,6 +13,9 @@ import Invoices from "@/pages/invoices";
 import Admissions from "@/pages/admissions";
 import Surgeries from "@/pages/surgeries";
 import Laboratory from "@/pages/laboratory";
+import Radiology from "@/pages/radiology";
+import HR from "@/pages/hr";
+import Payroll from "@/pages/payroll";
 import { useAuth } from "@/hooks/useAuth";
 import { SidebarProvider, SidebarTrigger, Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 import { Home, Users, Calendar, Activity, Pill, FileText, LogOut, Stethoscope, Building2, DollarSign, UserCog } from "lucide-react";
@@ -77,6 +80,9 @@ function Router() {
           <Route path="/admissions" component={Admissions} />
           <Route path="/surgeries" component={Surgeries} />
           <Route path="/laboratory" component={Laboratory} />
+          <Route path="/radiology" component={Radiology} />
+          <Route path="/hr" component={HR} />
+          <Route path="/payroll" component={Payroll} />
           {/* Add more routes here as pages are created */}
         </>
       )}
