@@ -3,6 +3,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
+import { requirePermission, requireRole } from "./middleware/rbac";
 import { 
   insertPatientSchema,
   insertAppointmentSchema,
@@ -32,7 +33,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
-      res.json(user);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      res.json({
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+        profileImageUrl: user.profileImageUrl,
+      });
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
@@ -104,7 +115,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/patients/:id", isAuthenticated, async (req, res) => {
+  app.delete("/api/patients/:id", isAuthenticated, requirePermission("patients", "delete"), async (req, res) => {
     try {
       await storage.deletePatient(req.params.id);
       res.status(204).send();
@@ -172,7 +183,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/appointments/:id", isAuthenticated, async (req, res) => {
+  app.delete("/api/appointments/:id", isAuthenticated, requirePermission("appointments", "delete"), async (req, res) => {
     try {
       await storage.deleteAppointment(req.params.id);
       res.status(204).send();
@@ -461,7 +472,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ============================================
   // Staff & HR routes
   // ============================================
-  app.get("/api/staff", isAuthenticated, async (req, res) => {
+  app.get("/api/staff", isAuthenticated, requirePermission("staff", "read"), async (req, res) => {
     try {
       const staff = await storage.getAllStaff();
       res.json(staff);
@@ -471,7 +482,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/staff", isAuthenticated, async (req, res) => {
+  app.post("/api/staff", isAuthenticated, requirePermission("staff", "create"), async (req, res) => {
     try {
       const validatedData = insertStaffSchema.parse(req.body);
       const staffMember = await storage.createStaff(validatedData);
@@ -482,7 +493,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/staff/:id", isAuthenticated, async (req, res) => {
+  app.put("/api/staff/:id", isAuthenticated, requirePermission("staff", "update"), async (req, res) => {
     try {
       const validatedData = insertStaffSchema.partial().parse(req.body);
       const staffMember = await storage.updateStaff(req.params.id, validatedData);
@@ -528,7 +539,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ============================================
   // Payroll routes
   // ============================================
-  app.get("/api/payroll", isAuthenticated, async (req, res) => {
+  app.get("/api/payroll", isAuthenticated, requirePermission("payroll", "read"), async (req, res) => {
     try {
       const month = req.query.month ? parseInt(req.query.month as string) : undefined;
       const year = req.query.year ? parseInt(req.query.year as string) : undefined;
@@ -546,7 +557,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/payroll", isAuthenticated, async (req, res) => {
+  app.post("/api/payroll", isAuthenticated, requirePermission("payroll", "create"), async (req, res) => {
     try {
       const validatedData = insertPayrollSchema.parse(req.body);
       const payroll = await storage.createPayroll(validatedData);
