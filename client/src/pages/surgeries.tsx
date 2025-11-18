@@ -78,7 +78,7 @@ export default function Surgeries() {
       cancelled: { label: "ملغية", variant: "destructive" },
     };
     const { label, variant } = statusMap[status] || { label: status, variant: "default" as const };
-    return <Badge variant={variant}>{label}</Badge>;
+    return <Badge variant={variant} data-testid={`badge-status-${status}`}>{label}</Badge>;
   };
 
   if (isLoading) {
@@ -326,18 +326,18 @@ export default function Surgeries() {
                 
                 return (
                   <TableRow key={surgery.id} data-testid={`row-surgery-${surgery.id}`}>
-                    <TableCell>
+                    <TableCell data-testid={`cell-patient-${surgery.id}`}>
                       {patient ? `${patient.firstNameAr} ${patient.familyNameAr}` : "غير معروف"}
                     </TableCell>
-                    <TableCell>{surgery.surgeryType}</TableCell>
-                    <TableCell>
+                    <TableCell data-testid={`cell-type-${surgery.id}`}>{surgery.surgeryType}</TableCell>
+                    <TableCell data-testid={`cell-surgeon-${surgery.id}`}>
                       {surgeon ? `د. ${surgeon.firstNameAr} ${surgeon.familyNameAr}` : "غير معروف"}
                     </TableCell>
-                    <TableCell>{surgery.operatingRoom}</TableCell>
-                    <TableCell>
+                    <TableCell data-testid={`cell-room-${surgery.id}`}>{surgery.operatingRoom}</TableCell>
+                    <TableCell data-testid={`cell-date-${surgery.id}`}>
                       {surgery.surgeryDate && format(new Date(surgery.surgeryDate), "dd/MM/yyyy HH:mm", { locale: ar })}
                     </TableCell>
-                    <TableCell>{getStatusBadge(surgery.status)}</TableCell>
+                    <TableCell data-testid={`cell-status-${surgery.id}`}>{getStatusBadge(surgery.status)}</TableCell>
                   </TableRow>
                 );
               })}

@@ -77,7 +77,7 @@ export default function Laboratory() {
       cancelled: { label: "ملغي", variant: "destructive" },
     };
     const { label, variant } = statusMap[status] || { label: status, variant: "default" as const };
-    return <Badge variant={variant}>{label}</Badge>;
+    return <Badge variant={variant} data-testid={`badge-status-${status}`}>{label}</Badge>;
   };
 
   if (isLoading) {
@@ -335,23 +335,23 @@ export default function Laboratory() {
                 
                 return (
                   <TableRow key={test.id} data-testid={`row-lab-test-${test.id}`}>
-                    <TableCell>
+                    <TableCell data-testid={`cell-patient-${test.id}`}>
                       {patient ? `${patient.firstNameAr} ${patient.familyNameAr}` : "غير معروف"}
                     </TableCell>
-                    <TableCell>
+                    <TableCell data-testid={`cell-test-type-${test.id}`}>
                       {test.testType === "blood" && "دم"}
                       {test.testType === "urine" && "بول"}
                       {test.testType === "stool" && "براز"}
                       {test.testType === "microbiology" && "ميكروبيولوجي"}
                     </TableCell>
-                    <TableCell>{test.testName}</TableCell>
-                    <TableCell>
+                    <TableCell data-testid={`cell-test-name-${test.id}`}>{test.testName}</TableCell>
+                    <TableCell data-testid={`cell-doctor-${test.id}`}>
                       {doctor ? `د. ${doctor.firstNameAr} ${doctor.familyNameAr}` : "غير معروف"}
                     </TableCell>
-                    <TableCell>
+                    <TableCell data-testid={`cell-date-${test.id}`}>
                       {test.requestDate && format(new Date(test.requestDate), "dd/MM/yyyy", { locale: ar })}
                     </TableCell>
-                    <TableCell>{getStatusBadge(test.status)}</TableCell>
+                    <TableCell data-testid={`cell-status-${test.id}`}>{getStatusBadge(test.status)}</TableCell>
                   </TableRow>
                 );
               })}
