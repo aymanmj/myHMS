@@ -111,10 +111,10 @@ export const patients = pgTable("patients", {
   
   // Medical History
   bloodType: varchar("blood_type"),
-  allergies: text("allergies").array(),
-  chronicDiseases: text("chronic_diseases").array(),
+  allergies: text("allergies").array().default(sql`ARRAY[]::text[]`),
+  chronicDiseases: text("chronic_diseases").array().default(sql`ARRAY[]::text[]`),
   familyMedicalHistory: text("family_medical_history"),
-  previousSurgeries: text("previous_surgeries").array(),
+  previousSurgeries: text("previous_surgeries").array().default(sql`ARRAY[]::text[]`),
   
   // Photo
   photoUrl: varchar("photo_url"),
@@ -125,7 +125,11 @@ export const patients = pgTable("patients", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-export const insertPatientSchema = createInsertSchema(patients).omit({
+export const insertPatientSchema = createInsertSchema(patients, {
+  allergies: z.array(z.string()).nullable().optional().default([]),
+  chronicDiseases: z.array(z.string()).nullable().optional().default([]),
+  previousSurgeries: z.array(z.string()).nullable().optional().default([]),
+}).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
