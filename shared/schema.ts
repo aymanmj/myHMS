@@ -322,7 +322,17 @@ export const prescriptions = pgTable("prescriptions", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-export const insertPrescriptionSchema = createInsertSchema(prescriptions).omit({
+const medicationItemSchema = z.object({
+  medicationId: z.string().min(1),
+  medicationName: z.string().min(1),
+  dosage: z.string().min(1),
+  frequency: z.string().min(1),
+  duration: z.string().min(1),
+});
+
+export const insertPrescriptionSchema = createInsertSchema(prescriptions, {
+  medications: z.array(medicationItemSchema).min(1),
+}).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
