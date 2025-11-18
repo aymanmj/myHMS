@@ -56,26 +56,13 @@ export default function Patients() {
       fatherNameAr: "",
       grandFatherNameAr: "",
       familyNameAr: "",
-      firstNameEn: "",
-      fatherNameEn: "",
-      grandFatherNameEn: "",
-      familyNameEn: "",
-      nationalId: "",
-      passportNo: "",
       dateOfBirth: "",
       gender: "male",
-      maritalStatus: "single",
       nationality: "",
       phone: "",
-      email: "",
-      address: "",
-      city: "",
-      emergencyContactName: "",
-      emergencyContactPhone: "",
-      bloodType: "unknown",
-      allergies: "",
-      chronicDiseases: "",
-      currentMedications: "",
+      allergies: [],
+      chronicDiseases: [],
+      previousSurgeries: [],
     },
   });
 
@@ -266,7 +253,7 @@ export default function Patients() {
                     />
                     <FormField
                       control={form.control}
-                      name="passportNo"
+                      name="passportNumber"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>رقم جواز السفر</FormLabel>
@@ -409,39 +396,6 @@ export default function Patients() {
                   </div>
                 </div>
 
-                {/* Emergency Contact */}
-                <div className="space-y-4">
-                  <h3 className="font-semibold text-lg">جهة الاتصال في حالات الطوارئ</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="emergencyContactName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>الاسم</FormLabel>
-                          <FormControl>
-                            <Input {...field} data-testid="input-emergency-name" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="emergencyContactPhone"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>رقم الهاتف</FormLabel>
-                          <FormControl>
-                            <Input {...field} data-testid="input-emergency-phone" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-
                 {/* Medical Info */}
                 <div className="space-y-4">
                   <h3 className="font-semibold text-lg">المعلومات الطبية</h3>
@@ -479,9 +433,18 @@ export default function Patients() {
                       name="allergies"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>الحساسية</FormLabel>
+                          <FormLabel>الحساسية (افصل بفاصلة)</FormLabel>
                           <FormControl>
-                            <Input {...field} value={field.value || ""} placeholder="لا يوجد" data-testid="input-allergies" />
+                            <Input 
+                              value={field.value?.join(", ") || ""} 
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                const array = value ? value.split(",").map(s => s.trim()).filter(Boolean) : [];
+                                field.onChange(array);
+                              }}
+                              placeholder="مثال: بنسلين، فول سوداني" 
+                              data-testid="input-allergies" 
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -492,22 +455,18 @@ export default function Patients() {
                       name="chronicDiseases"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>الأمراض المزمنة</FormLabel>
+                          <FormLabel>الأمراض المزمنة (افصل بفاصلة)</FormLabel>
                           <FormControl>
-                            <Input {...field} value={field.value || ""} placeholder="لا يوجد" data-testid="input-chronic-diseases" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="currentMedications"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>الأدوية الحالية</FormLabel>
-                          <FormControl>
-                            <Input {...field} value={field.value || ""} placeholder="لا يوجد" data-testid="input-current-medications" />
+                            <Input 
+                              value={field.value?.join(", ") || ""} 
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                const array = value ? value.split(",").map(s => s.trim()).filter(Boolean) : [];
+                                field.onChange(array);
+                              }}
+                              placeholder="مثال: سكري، ضغط" 
+                              data-testid="input-chronic-diseases" 
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -569,7 +528,6 @@ export default function Patients() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>رقم الملف</TableHead>
                 <TableHead>الاسم الكامل</TableHead>
                 <TableHead>رقم الهوية</TableHead>
                 <TableHead>الجنس</TableHead>
@@ -581,7 +539,6 @@ export default function Patients() {
             <TableBody>
               {filteredPatients?.map((patient: Patient) => (
                 <TableRow key={patient.id} data-testid={`row-patient-${patient.id}`}>
-                  <TableCell>{patient.fileNumber}</TableCell>
                   <TableCell>
                     <div className="font-medium">
                       {patient.firstNameAr} {patient.fatherNameAr} {patient.grandFatherNameAr} {patient.familyNameAr}
