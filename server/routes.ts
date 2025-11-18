@@ -53,7 +53,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ============================================
   // Patient routes
   // ============================================
-  app.get("/api/patients", isAuthenticated, async (req, res) => {
+  app.get("/api/patients", isAuthenticated, requirePermission("patients", "read"), async (req, res) => {
     try {
       const patients = await storage.getAllPatients();
       res.json(patients);

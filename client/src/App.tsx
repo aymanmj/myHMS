@@ -21,23 +21,29 @@ import { Home, Users, Calendar, Activity, Pill, FileText, LogOut, Stethoscope, B
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useLocation } from "wouter";
+import { usePermissions } from "@/hooks/usePermissions";
 
 function AppSidebar({ isCollapsed, onToggle }: { isCollapsed: boolean; onToggle: () => void }) {
   const [location] = useLocation();
+  const { canRead } = usePermissions();
   
-  const menuItems = [
-    { title: "الرئيسية", url: "/", icon: Home },
-    { title: "المرضى", url: "/patients", icon: Users },
-    { title: "المواعيد", url: "/appointments", icon: Calendar },
-    { title: "التنويم", url: "/admissions", icon: Activity },
-    { title: "العمليات", url: "/surgeries", icon: Stethoscope },
-    { title: "الصيدلية", url: "/pharmacy", icon: Pill },
-    { title: "المعامل", url: "/laboratory", icon: FileText },
-    { title: "الأشعة", url: "/radiology", icon: Building2 },
-    { title: "الموارد البشرية", url: "/hr", icon: UserCog },
-    { title: "الرواتب", url: "/payroll", icon: DollarSign },
-    { title: "الفواتير", url: "/invoices", icon: FileText },
+  const allMenuItems = [
+    { title: "الرئيسية", url: "/", icon: Home, resource: null },
+    { title: "المرضى", url: "/patients", icon: Users, resource: "patients" as const },
+    { title: "المواعيد", url: "/appointments", icon: Calendar, resource: "appointments" as const },
+    { title: "التنويم", url: "/admissions", icon: Activity, resource: "admissions" as const },
+    { title: "العمليات", url: "/surgeries", icon: Stethoscope, resource: "surgeries" as const },
+    { title: "الصيدلية", url: "/pharmacy", icon: Pill, resource: "medications" as const },
+    { title: "المعامل", url: "/laboratory", icon: FileText, resource: "labTests" as const },
+    { title: "الأشعة", url: "/radiology", icon: Building2, resource: "radiologyTests" as const },
+    { title: "الموارد البشرية", url: "/hr", icon: UserCog, resource: "staff" as const },
+    { title: "الرواتب", url: "/payroll", icon: DollarSign, resource: "payroll" as const },
+    { title: "الفواتير", url: "/invoices", icon: FileText, resource: "invoices" as const },
   ];
+
+  const menuItems = allMenuItems.filter(item => 
+    !item.resource || canRead(item.resource)
+  );
 
   return (
     <aside
