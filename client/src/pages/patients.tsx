@@ -15,9 +15,11 @@ import { useState } from "react";
 import { Search, Plus, Edit, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { usePermissions } from "@/hooks/usePermissions";
 
 export default function Patients() {
   const { toast } = useToast();
+  const { canCreate, canDelete } = usePermissions();
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);

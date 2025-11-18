@@ -16,10 +16,12 @@ import { Plus, Users, UserCheck, UserX, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
+import { usePermissions } from "@/hooks/usePermissions";
 
 export default function HR() {
   const { toast } = useToast();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const { canCreate, canUpdate, canDelete } = usePermissions();
 
   const { data: staff, isLoading } = useQuery({
     queryKey: ["/api/staff"],
@@ -105,16 +107,17 @@ export default function HR() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">إدارة الموارد البشرية</h1>
+          <h1 className="text-3xl font-bold" data-testid="text-page-title">إدارة الموارد البشرية</h1>
           <p className="text-muted-foreground">إدارة الموظفين والحضور والإجازات</p>
         </div>
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button data-testid="button-add-staff">
-              <Plus className="h-4 w-4 ml-2" />
-              إضافة موظف جديد
-            </Button>
-          </DialogTrigger>
+        {canCreate("staff") && (
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button data-testid="button-add-staff">
+                <Plus className="h-4 w-4 ml-2" />
+                إضافة موظف جديد
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto" dir="rtl">
             <DialogHeader>
               <DialogTitle>إضافة موظف جديد</DialogTitle>
@@ -340,6 +343,7 @@ export default function HR() {
             </Form>
           </DialogContent>
         </Dialog>
+        )}
       </div>
 
       {/* Statistics */}

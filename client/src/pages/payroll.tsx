@@ -14,6 +14,7 @@ import { insertPayrollSchema, type InsertPayroll, type Staff } from "@shared/sch
 import { useState } from "react";
 import { Plus, DollarSign, TrendingUp, Calendar, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { usePermissions } from "@/hooks/usePermissions";
 
 const months = [
   { value: 1, label: "يناير" },
@@ -33,6 +34,7 @@ const months = [
 export default function Payroll() {
   const { toast } = useToast();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const { canCreate } = usePermissions();
   const currentYear = new Date().getFullYear();
   const currentMonth = new Date().getMonth() + 1;
 
@@ -130,16 +132,17 @@ export default function Payroll() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">إدارة الرواتب</h1>
+          <h1 className="text-3xl font-bold" data-testid="text-page-title">إدارة الرواتب</h1>
           <p className="text-muted-foreground">رواتب الموظفين والمستحقات المالية</p>
         </div>
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button data-testid="button-add-payroll">
-              <Plus className="h-4 w-4 ml-2" />
-              إضافة راتب
-            </Button>
-          </DialogTrigger>
+        {canCreate("payroll") && (
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button data-testid="button-add-payroll">
+                <Plus className="h-4 w-4 ml-2" />
+                إضافة راتب
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-3xl" dir="rtl">
             <DialogHeader>
               <DialogTitle>إضافة راتب جديد</DialogTitle>
@@ -330,6 +333,7 @@ export default function Payroll() {
             </Form>
           </DialogContent>
         </Dialog>
+        )}
       </div>
 
       {/* Statistics */}
