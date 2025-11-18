@@ -63,7 +63,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/patients/search", isAuthenticated, async (req, res) => {
+  app.get("/api/patients/search", isAuthenticated, requirePermission("patients", "read"), async (req, res) => {
     try {
       const query = req.query.q as string;
       if (!query) {
@@ -77,7 +77,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/patients/:id", isAuthenticated, async (req, res) => {
+  app.get("/api/patients/:id", isAuthenticated, requirePermission("patients", "read"), async (req, res) => {
     try {
       const patient = await storage.getPatient(req.params.id);
       if (!patient) {
@@ -90,7 +90,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/patients", isAuthenticated, async (req: any, res) => {
+  app.post("/api/patients", isAuthenticated, requirePermission("patients", "create"), async (req: any, res) => {
     try {
       const validatedData = insertPatientSchema.parse(req.body);
       const patient = await storage.createPatient({
@@ -104,7 +104,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/patients/:id", isAuthenticated, async (req, res) => {
+  app.put("/api/patients/:id", isAuthenticated, requirePermission("patients", "update"), async (req, res) => {
     try {
       const validatedData = insertPatientSchema.partial().parse(req.body);
       const patient = await storage.updatePatient(req.params.id, validatedData);
@@ -128,7 +128,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ============================================
   // Appointment routes
   // ============================================
-  app.get("/api/appointments", isAuthenticated, async (req, res) => {
+  app.get("/api/appointments", isAuthenticated, requirePermission("appointments", "read"), async (req, res) => {
     try {
       const appointments = await storage.getAllAppointments();
       res.json(appointments);
@@ -138,7 +138,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/appointments/patient/:patientId", isAuthenticated, async (req, res) => {
+  app.get("/api/appointments/patient/:patientId", isAuthenticated, requirePermission("appointments", "read"), async (req, res) => {
     try {
       const appointments = await storage.getAppointmentsByPatient(req.params.patientId);
       res.json(appointments);
@@ -148,7 +148,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/appointments/doctor/:doctorId", isAuthenticated, async (req, res) => {
+  app.get("/api/appointments/doctor/:doctorId", isAuthenticated, requirePermission("appointments", "read"), async (req, res) => {
     try {
       const appointments = await storage.getAppointmentsByDoctor(req.params.doctorId);
       res.json(appointments);
@@ -158,7 +158,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/appointments", isAuthenticated, async (req: any, res) => {
+  app.post("/api/appointments", isAuthenticated, requirePermission("appointments", "create"), async (req: any, res) => {
     try {
       const validatedData = insertAppointmentSchema.parse(req.body);
       const appointment = await storage.createAppointment({
@@ -172,7 +172,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/appointments/:id", isAuthenticated, async (req, res) => {
+  app.put("/api/appointments/:id", isAuthenticated, requirePermission("appointments", "update"), async (req, res) => {
     try {
       const validatedData = insertAppointmentSchema.partial().parse(req.body);
       const appointment = await storage.updateAppointment(req.params.id, validatedData);
@@ -196,7 +196,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ============================================
   // Bed & Admission routes
   // ============================================
-  app.get("/api/beds", isAuthenticated, async (req, res) => {
+  app.get("/api/beds", isAuthenticated, requirePermission("admissions", "read"), async (req, res) => {
     try {
       const beds = await storage.getAllBeds();
       res.json(beds);
@@ -206,7 +206,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/beds/available", isAuthenticated, async (req, res) => {
+  app.get("/api/beds/available", isAuthenticated, requirePermission("admissions", "read"), async (req, res) => {
     try {
       const beds = await storage.getAvailableBeds();
       res.json(beds);
@@ -216,7 +216,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/beds", isAuthenticated, async (req, res) => {
+  app.post("/api/beds", isAuthenticated, requirePermission("admissions", "create"), async (req, res) => {
     try {
       const validatedData = insertBedSchema.parse(req.body);
       const bed = await storage.createBed(validatedData);
@@ -227,7 +227,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/beds/:id", isAuthenticated, async (req, res) => {
+  app.put("/api/beds/:id", isAuthenticated, requirePermission("admissions", "update"), async (req, res) => {
     try {
       const validatedData = insertBedSchema.partial().parse(req.body);
       const bed = await storage.updateBed(req.params.id, validatedData);
@@ -238,7 +238,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/admissions", isAuthenticated, async (req, res) => {
+  app.get("/api/admissions", isAuthenticated, requirePermission("admissions", "read"), async (req, res) => {
     try {
       const admissions = await storage.getAllAdmissions();
       res.json(admissions);
@@ -248,7 +248,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/admissions", isAuthenticated, async (req: any, res) => {
+  app.post("/api/admissions", isAuthenticated, requirePermission("admissions", "create"), async (req: any, res) => {
     try {
       const validatedData = insertAdmissionSchema.parse(req.body);
       const admission = await storage.createAdmission({
@@ -262,7 +262,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/admissions/:id", isAuthenticated, async (req, res) => {
+  app.put("/api/admissions/:id", isAuthenticated, requirePermission("admissions", "update"), async (req, res) => {
     try {
       const validatedData = insertAdmissionSchema.partial().parse(req.body);
       const admission = await storage.updateAdmission(req.params.id, validatedData);
@@ -276,7 +276,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ============================================
   // Surgery routes
   // ============================================
-  app.get("/api/surgeries", isAuthenticated, async (req, res) => {
+  app.get("/api/surgeries", isAuthenticated, requirePermission("surgeries", "read"), async (req, res) => {
     try {
       const surgeries = await storage.getAllSurgeries();
       res.json(surgeries);
@@ -286,7 +286,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/surgeries", isAuthenticated, async (req: any, res) => {
+  app.post("/api/surgeries", isAuthenticated, requirePermission("surgeries", "create"), async (req: any, res) => {
     try {
       const validatedData = insertSurgerySchema.parse(req.body);
       const surgery = await storage.createSurgery({
@@ -300,7 +300,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/surgeries/:id", isAuthenticated, async (req, res) => {
+  app.put("/api/surgeries/:id", isAuthenticated, requirePermission("surgeries", "update"), async (req, res) => {
     try {
       const validatedData = insertSurgerySchema.partial().parse(req.body);
       const surgery = await storage.updateSurgery(req.params.id, validatedData);
@@ -314,7 +314,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ============================================
   // Pharmacy routes
   // ============================================
-  app.get("/api/medications", isAuthenticated, async (req, res) => {
+  app.get("/api/medications", isAuthenticated, requirePermission("medications", "read"), async (req, res) => {
     try {
       const medications = await storage.getAllMedications();
       res.json(medications);
@@ -324,7 +324,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/medications/low-stock", isAuthenticated, async (req, res) => {
+  app.get("/api/medications/low-stock", isAuthenticated, requirePermission("medications", "read"), async (req, res) => {
     try {
       const medications = await storage.getLowStockMedications();
       res.json(medications);
@@ -334,7 +334,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/medications/expiring", isAuthenticated, async (req, res) => {
+  app.get("/api/medications/expiring", isAuthenticated, requirePermission("medications", "read"), async (req, res) => {
     try {
       const days = parseInt(req.query.days as string) || 30;
       const medications = await storage.getExpiringMedications(days);
@@ -345,7 +345,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/medications", isAuthenticated, async (req, res) => {
+  app.post("/api/medications", isAuthenticated, requirePermission("medications", "create"), async (req, res) => {
     try {
       const validatedData = insertMedicationSchema.parse(req.body);
       const medication = await storage.createMedication(validatedData);
@@ -356,7 +356,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/medications/:id", isAuthenticated, async (req, res) => {
+  app.put("/api/medications/:id", isAuthenticated, requirePermission("medications", "update"), async (req, res) => {
     try {
       const validatedData = insertMedicationSchema.partial().parse(req.body);
       const medication = await storage.updateMedication(req.params.id, validatedData);
@@ -367,7 +367,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/prescriptions", isAuthenticated, async (req, res) => {
+  app.get("/api/prescriptions", isAuthenticated, requirePermission("prescriptions", "read"), async (req, res) => {
     try {
       const prescriptions = await storage.getAllPrescriptions();
       res.json(prescriptions);
@@ -377,7 +377,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/prescriptions", isAuthenticated, async (req, res) => {
+  app.post("/api/prescriptions", isAuthenticated, requirePermission("prescriptions", "create"), async (req, res) => {
     try {
       const validatedData = insertPrescriptionSchema.parse(req.body);
       const prescription = await storage.createPrescription(validatedData);
@@ -388,7 +388,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/prescriptions/:id", isAuthenticated, async (req, res) => {
+  app.put("/api/prescriptions/:id", isAuthenticated, requirePermission("prescriptions", "update"), async (req, res) => {
     try {
       const validatedData = insertPrescriptionSchema.partial().parse(req.body);
       const prescription = await storage.updatePrescription(req.params.id, validatedData);
@@ -402,7 +402,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ============================================
   // Laboratory routes
   // ============================================
-  app.get("/api/lab-tests", isAuthenticated, async (req, res) => {
+  app.get("/api/lab-tests", isAuthenticated, requirePermission("labTests", "read"), async (req, res) => {
     try {
       const labTests = await storage.getAllLabTests();
       res.json(labTests);
@@ -412,7 +412,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/lab-tests", isAuthenticated, async (req, res) => {
+  app.post("/api/lab-tests", isAuthenticated, requirePermission("labTests", "create"), async (req, res) => {
     try {
       const validatedData = insertLabTestSchema.parse(req.body);
       const labTest = await storage.createLabTest(validatedData);
@@ -423,7 +423,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/lab-tests/:id", isAuthenticated, async (req, res) => {
+  app.put("/api/lab-tests/:id", isAuthenticated, requirePermission("labTests", "update"), async (req, res) => {
     try {
       const validatedData = insertLabTestSchema.partial().parse(req.body);
       const labTest = await storage.updateLabTest(req.params.id, validatedData);
@@ -437,7 +437,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ============================================
   // Radiology routes
   // ============================================
-  app.get("/api/radiology-tests", isAuthenticated, async (req, res) => {
+  app.get("/api/radiology-tests", isAuthenticated, requirePermission("radiologyTests", "read"), async (req, res) => {
     try {
       const radiologyTests = await storage.getAllRadiologyTests();
       res.json(radiologyTests);
@@ -447,7 +447,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/radiology-tests", isAuthenticated, async (req, res) => {
+  app.post("/api/radiology-tests", isAuthenticated, requirePermission("radiologyTests", "create"), async (req, res) => {
     try {
       const validatedData = insertRadiologyTestSchema.parse(req.body);
       const radiologyTest = await storage.createRadiologyTest(validatedData);
@@ -458,7 +458,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/radiology-tests/:id", isAuthenticated, async (req, res) => {
+  app.put("/api/radiology-tests/:id", isAuthenticated, requirePermission("radiologyTests", "update"), async (req, res) => {
     try {
       const validatedData = insertRadiologyTestSchema.partial().parse(req.body);
       const radiologyTest = await storage.updateRadiologyTest(req.params.id, validatedData);
@@ -504,7 +504,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/leaves", isAuthenticated, async (req, res) => {
+  app.get("/api/leaves", isAuthenticated, requirePermission("staff", "read"), async (req, res) => {
     try {
       const leaves = await storage.getAllLeaves();
       res.json(leaves);
@@ -514,7 +514,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/leaves", isAuthenticated, async (req, res) => {
+  app.post("/api/leaves", isAuthenticated, requirePermission("staff", "create"), async (req, res) => {
     try {
       const validatedData = insertLeaveSchema.parse(req.body);
       const leave = await storage.createLeave(validatedData);
@@ -525,7 +525,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/leaves/:id", isAuthenticated, async (req, res) => {
+  app.put("/api/leaves/:id", isAuthenticated, requirePermission("staff", "update"), async (req, res) => {
     try {
       const validatedData = insertLeaveSchema.partial().parse(req.body);
       const leave = await storage.updateLeave(req.params.id, validatedData);
@@ -571,7 +571,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ============================================
   // Billing & Invoice routes
   // ============================================
-  app.get("/api/invoices", isAuthenticated, async (req, res) => {
+  app.get("/api/invoices", isAuthenticated, requirePermission("invoices", "read"), async (req, res) => {
     try {
       const invoices = await storage.getAllInvoices();
       res.json(invoices);
@@ -581,7 +581,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/invoices/overdue", isAuthenticated, async (req, res) => {
+  app.get("/api/invoices/overdue", isAuthenticated, requirePermission("invoices", "read"), async (req, res) => {
     try {
       const invoices = await storage.getOverdueInvoices();
       res.json(invoices);
@@ -591,7 +591,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/invoices", isAuthenticated, async (req: any, res) => {
+  app.post("/api/invoices", isAuthenticated, requirePermission("invoices", "create"), async (req: any, res) => {
     try {
       const validatedData = insertInvoiceSchema.parse(req.body);
       const invoice = await storage.createInvoice({
@@ -605,7 +605,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/invoices/:id", isAuthenticated, async (req, res) => {
+  app.put("/api/invoices/:id", isAuthenticated, requirePermission("invoices", "update"), async (req, res) => {
     try {
       const validatedData = insertInvoiceSchema.partial().parse(req.body);
       const invoice = await storage.updateInvoice(req.params.id, validatedData);
