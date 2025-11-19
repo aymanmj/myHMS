@@ -6,12 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertMedicationSchema, type Medication, type InsertMedication } from "@shared/schema";
-import { useState } from "react";
-import { Plus, AlertTriangle, Package } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Plus, AlertTriangle, Package, Edit, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
@@ -19,8 +20,11 @@ import { usePermissions } from "@/hooks/usePermissions";
 
 export default function Pharmacy() {
   const { toast } = useToast();
-  const { canCreate } = usePermissions();
+  const { canCreate, canUpdate, canDelete } = usePermissions();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingMedication, setEditingMedication] = useState<Medication | null>(null);
+  const [deletingMedicationId, setDeletingMedicationId] = useState<string | null>(null);
 
   const { data: medications, isLoading } = useQuery<Medication[]>({
     queryKey: ["/api/medications"],
@@ -41,7 +45,9 @@ export default function Pharmacy() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/medications"] });
       queryClient.invalidateQueries({ queryKey: ["/api/medications/low-stock"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/medications/expiring"] });
       setIsAddDialogOpen(false);
+      form.reset();
       toast({
         title: "تم بنجاح",
         description: "تم إضافة الدواء بنجاح",
@@ -51,6 +57,53 @@ export default function Pharmacy() {
       toast({
         title: "خطأ",
         description: error.message || "فشل في إضافة الدواء",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const editMedicationMutation = useMutation({
+    mutationFn: async ({ id, medication }: { id: string; medication: Partial<InsertMedication> }) => {
+      return await apiRequest("PUT", `/api/medications/${id}`, medication);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/medications"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/medications/low-stock"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/medications/expiring"] });
+      setIsEditDialogOpen(false);
+      setEditingMedication(null);
+      toast({
+        title: "تم بنجاح",
+        description: "تم تحديث الدواء بنجاح",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "خطأ",
+        description: error.message || "فشل في تحديث الدواء",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteMedicationMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return await apiRequest("DELETE", `/api/medications/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/medications"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/medications/low-stock"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/medications/expiring"] });
+      setDeletingMedicationId(null);
+      toast({
+        title: "تم بنجاح",
+        description: "تم حذف الدواء بنجاح",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "خطأ",
+        description: error.message || "فشل في حذف الدواء",
         variant: "destructive",
       });
     },
@@ -71,8 +124,60 @@ export default function Pharmacy() {
     },
   });
 
+  const editForm = useForm<InsertMedication>({
+    resolver: zodResolver(insertMedicationSchema),
+    defaultValues: {
+      name: "",
+      genericName: "",
+      barcode: "",
+      category: "",
+      manufacturer: "",
+      unitPrice: "0",
+      stockQuantity: 0,
+      minStockLevel: 10,
+      expiryDate: "",
+    },
+  });
+
+  useEffect(() => {
+    if (editingMedication) {
+      editForm.reset({
+        name: editingMedication.name,
+        genericName: editingMedication.genericName || "",
+        barcode: editingMedication.barcode || "",
+        category: editingMedication.category || "",
+        manufacturer: editingMedication.manufacturer || "",
+        unitPrice: editingMedication.unitPrice,
+        stockQuantity: editingMedication.stockQuantity,
+        minStockLevel: editingMedication.minStockLevel,
+        expiryDate: editingMedication.expiryDate || "",
+      });
+    }
+  }, [editingMedication]);
+
   const onSubmit = (data: InsertMedication) => {
     addMedicationMutation.mutate(data);
+  };
+
+  const onEditSubmit = (data: InsertMedication) => {
+    if (!editingMedication) return;
+    
+    const cleanedData = {
+      ...data,
+      unitPrice: String(data.unitPrice),
+      stockQuantity: parseInt(String(data.stockQuantity)) || 0,
+      minStockLevel: parseInt(String(data.minStockLevel)) || 0,
+    };
+    
+    editMedicationMutation.mutate({
+      id: editingMedication.id,
+      medication: cleanedData,
+    });
+  };
+
+  const handleDelete = () => {
+    if (!deletingMedicationId) return;
+    deleteMedicationMutation.mutate(deletingMedicationId);
   };
 
   if (isLoading) {
@@ -359,6 +464,7 @@ export default function Pharmacy() {
                 <TableHead>السعر</TableHead>
                 <TableHead>انتهاء الصلاحية</TableHead>
                 <TableHead>الحالة</TableHead>
+                <TableHead>الإجراءات</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -390,6 +496,33 @@ export default function Pharmacy() {
                       {isExpiring && <Badge variant="destructive">قريب الانتهاء</Badge>}
                       {!isLowStock && !isExpiring && <Badge variant="secondary">متوفر</Badge>}
                     </TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        {canUpdate("medications") && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setEditingMedication(medication);
+                              setIsEditDialogOpen(true);
+                            }}
+                            data-testid={`button-edit-${medication.id}`}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        )}
+                        {canDelete("medications") && (
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => setDeletingMedicationId(medication.id)}
+                            data-testid={`button-delete-${medication.id}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
                   </TableRow>
                 );
               })}
@@ -397,6 +530,202 @@ export default function Pharmacy() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Edit Medication Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto" dir="rtl">
+          <DialogHeader>
+            <DialogTitle>تعديل دواء</DialogTitle>
+            <DialogDescription>
+              تحديث بيانات الدواء
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...editForm}>
+            <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4">
+              <FormField
+                control={editForm.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>اسم الدواء</FormLabel>
+                    <FormControl>
+                      <Input {...field} data-testid="edit-input-name" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={editForm.control}
+                  name="genericName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>الاسم العلمي</FormLabel>
+                      <FormControl>
+                        <Input {...field} value={field.value || ""} data-testid="edit-input-generic-name" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="barcode"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>الباركود</FormLabel>
+                      <FormControl>
+                        <Input {...field} value={field.value || ""} data-testid="edit-input-barcode" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={editForm.control}
+                  name="category"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>التصنيف</FormLabel>
+                      <FormControl>
+                        <Input {...field} value={field.value || ""} data-testid="edit-input-category" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="manufacturer"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>الشركة المصنعة</FormLabel>
+                      <FormControl>
+                        <Input {...field} value={field.value || ""} data-testid="edit-input-manufacturer" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <FormField
+                  control={editForm.control}
+                  name="stockQuantity"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>الكمية المتوفرة</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          {...field}
+                          onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                          data-testid="edit-input-stock-quantity"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="minStockLevel"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>الحد الأدنى للمخزون</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          {...field}
+                          onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                          data-testid="edit-input-min-stock"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="unitPrice"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>السعر (ريال)</FormLabel>
+                      <FormControl>
+                        <Input {...field} data-testid="edit-input-unit-price" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={editForm.control}
+                name="expiryDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>تاريخ انتهاء الصلاحية</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} value={field.value || ""} data-testid="edit-input-expiry-date" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="flex justify-end gap-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setIsEditDialogOpen(false);
+                    setEditingMedication(null);
+                  }}
+                  data-testid="edit-button-cancel"
+                >
+                  إلغاء
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={editMedicationMutation.isPending}
+                  data-testid="edit-button-submit"
+                >
+                  {editMedicationMutation.isPending ? "جاري الحفظ..." : "حفظ التغييرات"}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deletingMedicationId} onOpenChange={(open) => !open && setDeletingMedicationId(null)}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>تأكيد الحذف</AlertDialogTitle>
+            <AlertDialogDescription>
+              هل أنت متأكد من حذف هذا الدواء؟ لا يمكن التراجع عن هذا الإجراء.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="delete-button-cancel">إلغاء</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-testid="delete-button-confirm"
+            >
+              حذف
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

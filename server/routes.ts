@@ -624,6 +624,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/medications/:id", isAuthenticated, requirePermission("medications", "delete"), async (req, res) => {
+    try {
+      await storage.deleteMedication(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      console.error("Error deleting medication:", error);
+      if (error.message === "Medication not found") {
+        res.status(404).json({ message: "Medication not found" });
+      } else {
+        res.status(500).json({ message: "Failed to delete medication" });
+      }
+    }
+  });
+
   app.get("/api/prescriptions", isAuthenticated, requirePermission("prescriptions", "read"), async (req, res) => {
     try {
       const prescriptions = await storage.getAllPrescriptions();
@@ -663,6 +677,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error updating prescription:", error);
       res.status(400).json({ message: error.message || "Failed to update prescription" });
+    }
+  });
+
+  app.delete("/api/prescriptions/:id", isAuthenticated, requirePermission("prescriptions", "delete"), async (req, res) => {
+    try {
+      await storage.deletePrescription(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      console.error("Error deleting prescription:", error);
+      if (error.message === "Prescription not found") {
+        res.status(404).json({ message: "Prescription not found" });
+      } else {
+        res.status(500).json({ message: "Failed to delete prescription" });
+      }
     }
   });
 

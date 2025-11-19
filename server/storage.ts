@@ -546,6 +546,13 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
+  async deleteMedication(id: string): Promise<void> {
+    const [deleted] = await db.delete(medications).where(eq(medications.id, id)).returning();
+    if (!deleted) {
+      throw new Error("Medication not found");
+    }
+  }
+
   async getAllPrescriptions(): Promise<Prescription[]> {
     return await db.select().from(prescriptions).orderBy(desc(prescriptions.prescriptionDate));
   }
@@ -566,6 +573,13 @@ export class DatabaseStorage implements IStorage {
       .where(eq(prescriptions.id, id))
       .returning();
     return updated;
+  }
+
+  async deletePrescription(id: string): Promise<void> {
+    const [deleted] = await db.delete(prescriptions).where(eq(prescriptions.id, id)).returning();
+    if (!deleted) {
+      throw new Error("Prescription not found");
+    }
   }
 
   // ============================================

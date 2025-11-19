@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -37,9 +38,10 @@ type PrescriptionFormData = z.infer<typeof prescriptionFormSchema>;
 
 export default function Prescriptions() {
   const { toast } = useToast();
-  const { canCreate } = usePermissions();
+  const { canCreate, canDelete } = usePermissions();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isDialogFirstOpen, setIsDialogFirstOpen] = useState(true);
+  const [deletingPrescriptionId, setDeletingPrescriptionId] = useState<string | null>(null);
 
   const { data: prescriptions, isLoading } = useQuery<Prescription[]>({
     queryKey: ["/api/prescriptions"],
@@ -101,8 +103,34 @@ export default function Prescriptions() {
     },
   });
 
+  const deletePrescriptionMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return await apiRequest("DELETE", `/api/prescriptions/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/prescriptions"] });
+      setDeletingPrescriptionId(null);
+      toast({
+        title: "تم بنجاح",
+        description: "تم حذف الوصفة الطبية بنجاح",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "خطأ",
+        description: error.message || "فشل في حذف الوصفة",
+        variant: "destructive",
+      });
+    },
+  });
+
   const onSubmit = (data: PrescriptionFormData) => {
     addPrescriptionMutation.mutate(data);
+  };
+
+  const handleDelete = () => {
+    if (!deletingPrescriptionId) return;
+    deletePrescriptionMutation.mutate(deletingPrescriptionId);
   };
 
   const getStatusBadge = (status: string) => {
@@ -412,12 +440,13 @@ export default function Prescriptions() {
                 <TableHead>عدد الأدوية</TableHead>
                 <TableHead>الحالة</TableHead>
                 <TableHead>التعليمات</TableHead>
+                <TableHead>الإجراءات</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {prescriptionsList.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground">
+                  <TableCell colSpan={6} className="text-center text-muted-foreground">
                     لا توجد وصفات طبية مسجلة
                   </TableCell>
                 </TableRow>
@@ -441,6 +470,18 @@ export default function Prescriptions() {
                       <TableCell className="max-w-xs truncate" data-testid={`cell-instructions-${prescription.id}`}>
                         {prescription.instructions || "-"}
                       </TableCell>
+                      <TableCell>
+                        {canDelete("prescriptions") && (
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => setDeletingPrescriptionId(prescription.id)}
+                            data-testid={`button-delete-${prescription.id}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </TableCell>
                     </TableRow>
                   );
                 })
@@ -449,6 +490,28 @@ export default function Prescriptions() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deletingPrescriptionId} onOpenChange={(open) => !open && setDeletingPrescriptionId(null)}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>تأكيد الحذف</AlertDialogTitle>
+            <AlertDialogDescription>
+              هل أنت متأكد من حذف هذه الوصفة الطبية؟ لا يمكن التراجع عن هذا الإجراء.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="delete-button-cancel">إلغاء</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-testid="delete-button-confirm"
+            >
+              حذف
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
