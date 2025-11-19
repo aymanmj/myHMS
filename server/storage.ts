@@ -391,11 +391,18 @@ export class DatabaseStorage implements IStorage {
       .set({ ...appointment, updatedAt: new Date() })
       .where(eq(appointments.id, id))
       .returning();
+    
+    if (!updated) {
+      throw new Error("Appointment not found");
+    }
     return updated;
   }
 
   async deleteAppointment(id: string): Promise<void> {
-    await db.delete(appointments).where(eq(appointments.id, id));
+    const result = await db.delete(appointments).where(eq(appointments.id, id)).returning();
+    if (result.length === 0) {
+      throw new Error("Appointment not found");
+    }
   }
 
   // ============================================

@@ -174,6 +174,8 @@ export const insertAppointmentSchema = createInsertSchema(appointments).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  appointmentDate: z.coerce.date(),
 });
 
 export type InsertAppointment = z.infer<typeof insertAppointmentSchema>;
