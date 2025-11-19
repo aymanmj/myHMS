@@ -50,7 +50,7 @@ import {
   type InsertInvoice,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, gte, lte, like, or, sql } from "drizzle-orm";
+import { eq, desc, and, gte, lte, like, or, sql, isNull } from "drizzle-orm";
 
 // Interface for storage operations
 export interface IStorage {
@@ -190,12 +190,12 @@ export class DatabaseStorage implements IStorage {
   // ============================================
   
   async getUser(id: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
+    const [user] = await db.select().from(users).where(and(eq(users.id, id), isNull(users.deletedAt)));
     return user;
   }
 
   async getAllUsers(): Promise<User[]> {
-    return await db.select().from(users);
+    return await db.select().from(users).where(isNull(users.deletedAt));
   }
 
   async upsertUser(userData: UpsertUser): Promise<User> {
@@ -273,11 +273,11 @@ export class DatabaseStorage implements IStorage {
   // ============================================
   
   async getAllPatients(): Promise<Patient[]> {
-    return await db.select().from(patients).orderBy(desc(patients.createdAt));
+    return await db.select().from(patients).where(isNull(patients.deletedAt)).orderBy(desc(patients.createdAt));
   }
 
   async getPatient(id: string): Promise<Patient | undefined> {
-    const [patient] = await db.select().from(patients).where(eq(patients.id, id));
+    const [patient] = await db.select().from(patients).where(and(eq(patients.id, id), isNull(patients.deletedAt)));
     return patient;
   }
 
@@ -294,13 +294,13 @@ export class DatabaseStorage implements IStorage {
       patientRadiologyTests,
       patientInvoices
     ] = await Promise.all([
-      db.select().from(appointments).where(eq(appointments.patientId, id)).orderBy(desc(appointments.appointmentDate)),
-      db.select().from(prescriptions).where(eq(prescriptions.patientId, id)).orderBy(desc(prescriptions.prescriptionDate)),
-      db.select().from(admissions).where(eq(admissions.patientId, id)).orderBy(desc(admissions.admissionDate)),
-      db.select().from(surgeries).where(eq(surgeries.patientId, id)).orderBy(desc(surgeries.surgeryDate)),
-      db.select().from(labTests).where(eq(labTests.patientId, id)).orderBy(desc(labTests.requestDate)),
-      db.select().from(radiologyTests).where(eq(radiologyTests.patientId, id)).orderBy(desc(radiologyTests.requestDate)),
-      db.select().from(invoices).where(eq(invoices.patientId, id)).orderBy(desc(invoices.invoiceDate))
+      db.select().from(appointments).where(and(eq(appointments.patientId, id), isNull(appointments.deletedAt))).orderBy(desc(appointments.appointmentDate)),
+      db.select().from(prescriptions).where(and(eq(prescriptions.patientId, id), isNull(prescriptions.deletedAt))).orderBy(desc(prescriptions.prescriptionDate)),
+      db.select().from(admissions).where(and(eq(admissions.patientId, id), isNull(admissions.deletedAt))).orderBy(desc(admissions.admissionDate)),
+      db.select().from(surgeries).where(and(eq(surgeries.patientId, id), isNull(surgeries.deletedAt))).orderBy(desc(surgeries.surgeryDate)),
+      db.select().from(labTests).where(and(eq(labTests.patientId, id), isNull(labTests.deletedAt))).orderBy(desc(labTests.requestDate)),
+      db.select().from(radiologyTests).where(and(eq(radiologyTests.patientId, id), isNull(radiologyTests.deletedAt))).orderBy(desc(radiologyTests.requestDate)),
+      db.select().from(invoices).where(and(eq(invoices.patientId, id), isNull(invoices.deletedAt))).orderBy(desc(invoices.invoiceDate))
     ]);
 
     return {
@@ -320,11 +320,14 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(patients)
       .where(
-        or(
-          like(patients.firstNameAr, `%${query}%`),
-          like(patients.familyNameAr, `%${query}%`),
-          like(patients.phone, `%${query}%`),
-          like(patients.nationalId, `%${query}%`)
+        and(
+          or(
+            like(patients.firstNameAr, `%${query}%`),
+            like(patients.familyNameAr, `%${query}%`),
+            like(patients.phone, `%${query}%`),
+            like(patients.nationalId, `%${query}%`)
+          ),
+          isNull(patients.deletedAt)
         )
       );
   }
@@ -358,20 +361,20 @@ export class DatabaseStorage implements IStorage {
   // ============================================
   
   async getAllAppointments(): Promise<Appointment[]> {
-    return await db.select().from(appointments).orderBy(desc(appointments.appointmentDate));
+    return await db.select().from(appointments).where(isNull(appointments.deletedAt)).orderBy(desc(appointments.appointmentDate));
   }
 
   async getAppointment(id: string): Promise<Appointment | undefined> {
-    const [appointment] = await db.select().from(appointments).where(eq(appointments.id, id));
+    const [appointment] = await db.select().from(appointments).where(and(eq(appointments.id, id), isNull(appointments.deletedAt)));
     return appointment;
   }
 
   async getAppointmentsByPatient(patientId: string): Promise<Appointment[]> {
-    return await db.select().from(appointments).where(eq(appointments.patientId, patientId));
+    return await db.select().from(appointments).where(and(eq(appointments.patientId, patientId), isNull(appointments.deletedAt)));
   }
 
   async getAppointmentsByDoctor(doctorId: string): Promise<Appointment[]> {
-    return await db.select().from(appointments).where(eq(appointments.doctorId, doctorId));
+    return await db.select().from(appointments).where(and(eq(appointments.doctorId, doctorId), isNull(appointments.deletedAt)));
   }
 
   async getAppointmentsByDate(date: Date): Promise<Appointment[]> {
@@ -386,7 +389,8 @@ export class DatabaseStorage implements IStorage {
       .where(
         and(
           gte(appointments.appointmentDate, startOfDay),
-          lte(appointments.appointmentDate, endOfDay)
+          lte(appointments.appointmentDate, endOfDay),
+          isNull(appointments.deletedAt)
         )
       );
   }
@@ -424,11 +428,11 @@ export class DatabaseStorage implements IStorage {
   // ============================================
   
   async getAllBeds(): Promise<Bed[]> {
-    return await db.select().from(beds);
+    return await db.select().from(beds).where(isNull(beds.deletedAt));
   }
 
   async getAvailableBeds(): Promise<Bed[]> {
-    return await db.select().from(beds).where(eq(beds.status, "available"));
+    return await db.select().from(beds).where(and(eq(beds.status, "available"), isNull(beds.deletedAt)));
   }
 
   async createBed(bed: InsertBed): Promise<Bed> {
@@ -456,11 +460,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllAdmissions(): Promise<Admission[]> {
-    return await db.select().from(admissions).orderBy(desc(admissions.admissionDate));
+    return await db.select().from(admissions).where(isNull(admissions.deletedAt)).orderBy(desc(admissions.admissionDate));
   }
 
   async getActiveAdmissions(): Promise<Admission[]> {
-    return await db.select().from(admissions).where(eq(admissions.status, "active"));
+    return await db.select().from(admissions).where(and(eq(admissions.status, "active"), isNull(admissions.deletedAt)));
   }
 
   async createAdmission(admission: InsertAdmission): Promise<Admission> {
@@ -492,11 +496,11 @@ export class DatabaseStorage implements IStorage {
   // ============================================
   
   async getAllSurgeries(): Promise<Surgery[]> {
-    return await db.select().from(surgeries).orderBy(desc(surgeries.surgeryDate));
+    return await db.select().from(surgeries).where(isNull(surgeries.deletedAt)).orderBy(desc(surgeries.surgeryDate));
   }
 
   async getSurgery(id: string): Promise<Surgery | undefined> {
-    const [surgery] = await db.select().from(surgeries).where(eq(surgeries.id, id));
+    const [surgery] = await db.select().from(surgeries).where(and(eq(surgeries.id, id), isNull(surgeries.deletedAt)));
     return surgery;
   }
 
@@ -529,16 +533,16 @@ export class DatabaseStorage implements IStorage {
   // ============================================
   
   async getAllMedications(): Promise<Medication[]> {
-    return await db.select().from(medications);
+    return await db.select().from(medications).where(isNull(medications.deletedAt));
   }
 
   async getMedication(id: string): Promise<Medication | undefined> {
-    const [medication] = await db.select().from(medications).where(eq(medications.id, id));
+    const [medication] = await db.select().from(medications).where(and(eq(medications.id, id), isNull(medications.deletedAt)));
     return medication;
   }
 
   async getMedicationByBarcode(barcode: string): Promise<Medication | undefined> {
-    const [medication] = await db.select().from(medications).where(eq(medications.barcode, barcode));
+    const [medication] = await db.select().from(medications).where(and(eq(medications.barcode, barcode), isNull(medications.deletedAt)));
     return medication;
   }
 
@@ -546,7 +550,10 @@ export class DatabaseStorage implements IStorage {
     return await db
       .select()
       .from(medications)
-      .where(sql`${medications.stockQuantity} <= ${medications.minStockLevel}`);
+      .where(and(
+        sql`${medications.stockQuantity} <= ${medications.minStockLevel}`,
+        isNull(medications.deletedAt)
+      ));
   }
 
   async getExpiringMedications(days: number): Promise<Medication[]> {
@@ -556,7 +563,10 @@ export class DatabaseStorage implements IStorage {
     return await db
       .select()
       .from(medications)
-      .where(lte(medications.expiryDate, futureDate));
+      .where(and(
+        lte(medications.expiryDate, futureDate),
+        isNull(medications.deletedAt)
+      ));
   }
 
   async createMedication(medication: InsertMedication): Promise<Medication> {
@@ -584,11 +594,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllPrescriptions(): Promise<Prescription[]> {
-    return await db.select().from(prescriptions).orderBy(desc(prescriptions.prescriptionDate));
+    return await db.select().from(prescriptions).where(isNull(prescriptions.deletedAt)).orderBy(desc(prescriptions.prescriptionDate));
   }
 
   async getPrescriptionsByPatient(patientId: string): Promise<Prescription[]> {
-    return await db.select().from(prescriptions).where(eq(prescriptions.patientId, patientId));
+    return await db.select().from(prescriptions).where(and(eq(prescriptions.patientId, patientId), isNull(prescriptions.deletedAt)));
   }
 
   async createPrescription(prescription: InsertPrescription): Promise<Prescription> {
@@ -620,16 +630,16 @@ export class DatabaseStorage implements IStorage {
   // ============================================
   
   async getAllLabTests(): Promise<LabTest[]> {
-    return await db.select().from(labTests).orderBy(desc(labTests.requestDate));
+    return await db.select().from(labTests).where(isNull(labTests.deletedAt)).orderBy(desc(labTests.requestDate));
   }
 
   async getLabTest(id: string): Promise<LabTest | undefined> {
-    const [labTest] = await db.select().from(labTests).where(eq(labTests.id, id));
+    const [labTest] = await db.select().from(labTests).where(and(eq(labTests.id, id), isNull(labTests.deletedAt)));
     return labTest;
   }
 
   async getLabTestsByPatient(patientId: string): Promise<LabTest[]> {
-    return await db.select().from(labTests).where(eq(labTests.patientId, patientId));
+    return await db.select().from(labTests).where(and(eq(labTests.patientId, patientId), isNull(labTests.deletedAt)));
   }
 
   async createLabTest(labTest: InsertLabTest): Promise<LabTest> {
@@ -651,16 +661,16 @@ export class DatabaseStorage implements IStorage {
   // ============================================
   
   async getAllRadiologyTests(): Promise<RadiologyTest[]> {
-    return await db.select().from(radiologyTests).orderBy(desc(radiologyTests.requestDate));
+    return await db.select().from(radiologyTests).where(isNull(radiologyTests.deletedAt)).orderBy(desc(radiologyTests.requestDate));
   }
 
   async getRadiologyTest(id: string): Promise<RadiologyTest | undefined> {
-    const [radiologyTest] = await db.select().from(radiologyTests).where(eq(radiologyTests.id, id));
+    const [radiologyTest] = await db.select().from(radiologyTests).where(and(eq(radiologyTests.id, id), isNull(radiologyTests.deletedAt)));
     return radiologyTest;
   }
 
   async getRadiologyTestsByPatient(patientId: string): Promise<RadiologyTest[]> {
-    return await db.select().from(radiologyTests).where(eq(radiologyTests.patientId, patientId));
+    return await db.select().from(radiologyTests).where(and(eq(radiologyTests.patientId, patientId), isNull(radiologyTests.deletedAt)));
   }
 
   async createRadiologyTest(radiologyTest: InsertRadiologyTest): Promise<RadiologyTest> {
@@ -682,11 +692,11 @@ export class DatabaseStorage implements IStorage {
   // ============================================
   
   async getAllStaff(): Promise<Staff[]> {
-    return await db.select().from(staff);
+    return await db.select().from(staff).where(isNull(staff.deletedAt));
   }
 
   async getStaff(id: string): Promise<Staff | undefined> {
-    const [staffMember] = await db.select().from(staff).where(eq(staff.id, id));
+    const [staffMember] = await db.select().from(staff).where(and(eq(staff.id, id), isNull(staff.deletedAt)));
     return staffMember;
   }
 
@@ -712,7 +722,8 @@ export class DatabaseStorage implements IStorage {
         and(
           eq(attendance.staffId, staffId),
           gte(attendance.date, startDate),
-          lte(attendance.date, endDate)
+          lte(attendance.date, endDate),
+          isNull(attendance.deletedAt)
         )
       );
   }
@@ -723,11 +734,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getLeavesByStaff(staffId: string): Promise<Leave[]> {
-    return await db.select().from(leaves).where(eq(leaves.staffId, staffId));
+    return await db.select().from(leaves).where(and(eq(leaves.staffId, staffId), isNull(leaves.deletedAt)));
   }
 
   async getAllLeaves(): Promise<Leave[]> {
-    return await db.select().from(leaves).orderBy(desc(leaves.createdAt));
+    return await db.select().from(leaves).where(isNull(leaves.deletedAt)).orderBy(desc(leaves.createdAt));
   }
 
   async createLeave(leave: InsertLeave): Promise<Leave> {
@@ -751,7 +762,8 @@ export class DatabaseStorage implements IStorage {
       .where(
         and(
           eq(shifts.staffId, staffId),
-          eq(shifts.shiftDate, date)
+          eq(shifts.shiftDate, date),
+          isNull(shifts.deletedAt)
         )
       );
   }
@@ -766,13 +778,14 @@ export class DatabaseStorage implements IStorage {
   // ============================================
   
   async getPayrollByStaff(staffId: string): Promise<Payroll[]> {
-    return await db.select().from(payroll).where(eq(payroll.staffId, staffId));
+    return await db.select().from(payroll).where(and(eq(payroll.staffId, staffId), isNull(payroll.deletedAt)));
   }
 
   async getAllPayroll(): Promise<Payroll[]> {
     return await db
       .select()
       .from(payroll)
+      .where(isNull(payroll.deletedAt))
       .orderBy(payroll.year, payroll.month);
   }
 
@@ -783,7 +796,8 @@ export class DatabaseStorage implements IStorage {
       .where(
         and(
           eq(payroll.month, month),
-          eq(payroll.year, year)
+          eq(payroll.year, year),
+          isNull(payroll.deletedAt)
         )
       );
   }
@@ -807,20 +821,20 @@ export class DatabaseStorage implements IStorage {
   // ============================================
   
   async getAllInvoices(): Promise<Invoice[]> {
-    return await db.select().from(invoices).orderBy(desc(invoices.invoiceDate));
+    return await db.select().from(invoices).where(isNull(invoices.deletedAt)).orderBy(desc(invoices.invoiceDate));
   }
 
   async getInvoice(id: string): Promise<Invoice | undefined> {
-    const [invoice] = await db.select().from(invoices).where(eq(invoices.id, id));
+    const [invoice] = await db.select().from(invoices).where(and(eq(invoices.id, id), isNull(invoices.deletedAt)));
     return invoice;
   }
 
   async getInvoicesByPatient(patientId: string): Promise<Invoice[]> {
-    return await db.select().from(invoices).where(eq(invoices.patientId, patientId));
+    return await db.select().from(invoices).where(and(eq(invoices.patientId, patientId), isNull(invoices.deletedAt)));
   }
 
   async getOverdueInvoices(): Promise<Invoice[]> {
-    return await db.select().from(invoices).where(eq(invoices.paymentStatus, "overdue"));
+    return await db.select().from(invoices).where(and(eq(invoices.paymentStatus, "overdue"), isNull(invoices.deletedAt)));
   }
 
   async createInvoice(invoice: InsertInvoice): Promise<Invoice> {
