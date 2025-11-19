@@ -26,7 +26,7 @@ export default function Patients() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
 
-  const { data: patients, isLoading } = useQuery({
+  const { data: patients, isLoading } = useQuery<Patient[]>({
     queryKey: ["/api/patients"],
   });
 
@@ -188,7 +188,7 @@ export default function Patients() {
                         <FormItem>
                           <FormLabel>First Name</FormLabel>
                           <FormControl>
-                            <Input {...field} data-testid="input-first-name-en" />
+                            <Input {...field} value={field.value || ""} data-testid="input-first-name-en" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -201,7 +201,7 @@ export default function Patients() {
                         <FormItem>
                           <FormLabel>Father Name</FormLabel>
                           <FormControl>
-                            <Input {...field} data-testid="input-father-name-en" />
+                            <Input {...field} value={field.value || ""} data-testid="input-father-name-en" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -214,7 +214,7 @@ export default function Patients() {
                         <FormItem>
                           <FormLabel>Grand Father Name</FormLabel>
                           <FormControl>
-                            <Input {...field} data-testid="input-grandfather-name-en" />
+                            <Input {...field} value={field.value || ""} data-testid="input-grandfather-name-en" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -227,7 +227,7 @@ export default function Patients() {
                         <FormItem>
                           <FormLabel>Family Name</FormLabel>
                           <FormControl>
-                            <Input {...field} data-testid="input-family-name-en" />
+                            <Input {...field} value={field.value || ""} data-testid="input-family-name-en" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -247,7 +247,7 @@ export default function Patients() {
                         <FormItem>
                           <FormLabel>رقم الهوية الوطنية</FormLabel>
                           <FormControl>
-                            <Input {...field} data-testid="input-national-id" />
+                            <Input {...field} value={field.value || ""} data-testid="input-national-id" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -306,7 +306,7 @@ export default function Patients() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>الحالة الاجتماعية</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <Select onValueChange={field.onChange} defaultValue={field.value || undefined}>
                             <FormControl>
                               <SelectTrigger data-testid="select-marital-status">
                                 <SelectValue />
@@ -376,7 +376,7 @@ export default function Patients() {
                         <FormItem>
                           <FormLabel>العنوان</FormLabel>
                           <FormControl>
-                            <Input {...field} data-testid="input-address" />
+                            <Input {...field} value={field.value || ""} data-testid="input-address" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -389,7 +389,7 @@ export default function Patients() {
                         <FormItem>
                           <FormLabel>المدينة</FormLabel>
                           <FormControl>
-                            <Input {...field} data-testid="input-city" />
+                            <Input {...field} value={field.value || ""} data-testid="input-city" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -408,7 +408,7 @@ export default function Patients() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>فصيلة الدم</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <Select onValueChange={field.onChange} defaultValue={field.value || undefined}>
                             <FormControl>
                               <SelectTrigger data-testid="select-blood-type">
                                 <SelectValue />
