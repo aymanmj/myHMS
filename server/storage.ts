@@ -48,6 +48,8 @@ import {
   invoices,
   type Invoice,
   type InsertInvoice,
+  auditLogs,
+  type AuditLog,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gte, lte, like, or, sql, isNull } from "drizzle-orm";
@@ -209,6 +211,7 @@ export class DatabaseStorage implements IStorage {
             firstName: userData.firstName,
             lastName: userData.lastName,
             profileImageUrl: userData.profileImageUrl,
+            role: userData.role,
             updatedAt: new Date(),
           },
         })
