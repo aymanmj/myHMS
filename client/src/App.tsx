@@ -18,8 +18,9 @@ import Radiology from "@/pages/radiology";
 import HR from "@/pages/hr";
 import Payroll from "@/pages/payroll";
 import Prescriptions from "@/pages/prescriptions";
+import UsersManagement from "@/pages/users";
 import { useAuth } from "@/hooks/useAuth";
-import { Home, Users, Calendar, Activity, Pill, FileText, LogOut, Stethoscope, Building2, DollarSign, UserCog, Menu, ChevronLeft, ChevronRight, ClipboardList } from "lucide-react";
+import { Home, Users, Calendar, Activity, Pill, FileText, LogOut, Stethoscope, Building2, DollarSign, UserCog, Menu, ChevronLeft, ChevronRight, ClipboardList, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useLocation } from "wouter";
@@ -28,6 +29,7 @@ import { usePermissions } from "@/hooks/usePermissions";
 function AppSidebar({ isCollapsed, onToggle }: { isCollapsed: boolean; onToggle: () => void }) {
   const [location] = useLocation();
   const { canRead } = usePermissions();
+  const { user } = useAuth();
   
   const allMenuItems = [
     { title: "الرئيسية", url: "/", icon: Home, resource: null },
@@ -42,11 +44,13 @@ function AppSidebar({ isCollapsed, onToggle }: { isCollapsed: boolean; onToggle:
     { title: "الموارد البشرية", url: "/hr", icon: UserCog, resource: "staff" as const },
     { title: "الرواتب", url: "/payroll", icon: DollarSign, resource: "payroll" as const },
     { title: "الفواتير", url: "/invoices", icon: FileText, resource: "invoices" as const },
+    { title: "إدارة المستخدمين", url: "/users", icon: Shield, resource: null, adminOnly: true },
   ];
 
-  const menuItems = allMenuItems.filter(item => 
-    !item.resource || canRead(item.resource)
-  );
+  const menuItems = allMenuItems.filter(item => {
+    if (item.adminOnly && (user as any)?.role !== 'admin') return false;
+    return !item.resource || canRead(item.resource);
+  });
 
   return (
     <aside
@@ -126,6 +130,7 @@ function Router() {
           <Route path="/radiology" component={Radiology} />
           <Route path="/hr" component={HR} />
           <Route path="/payroll" component={Payroll} />
+          <Route path="/users" component={UsersManagement} />
           {/* Add more routes here as pages are created */}
         </>
       )}

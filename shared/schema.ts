@@ -41,6 +41,14 @@ export const users = pgTable("users", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+export const insertUserSchema = createInsertSchema(users, {
+  email: z.string().email("البريد الإلكتروني غير صحيح"),
+  firstName: z.string().min(1, "الاسم الأول مطلوب"),
+  lastName: z.string().min(1, "اسم العائلة مطلوب"),
+  role: z.enum(["admin", "doctor", "nurse", "pharmacist", "lab_tech", "radiology_tech", "receptionist"]),
+}).omit({ id: true, createdAt: true, updatedAt: true });
+
+export type InsertUser = z.infer<typeof insertUserSchema>;
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
 

@@ -60,6 +60,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post('/api/users', isAuthenticated, requireRole("admin"), async (req: any, res) => {
+    try {
+      const { insertUserSchema } = await import("@shared/schema");
+      const validatedData = insertUserSchema.parse(req.body);
+      
+      const newUser = await storage.createUser(validatedData);
+      res.status(201).json(newUser);
+    } catch (error: any) {
+      console.error("Error creating user:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create user", error: error.message });
+    }
+  });
+
+  app.put('/api/users/:id', isAuthenticated, requireRole("admin"), async (req: any, res) => {
+    try {
+      const { insertUserSchema } = await import("@shared/schema");
+      const validatedData = insertUserSchema.partial().parse(req.body);
+
+      const updatedUser = await storage.updateUser(req.params.id, validatedData);
+      res.json(updatedUser);
+    } catch (error: any) {
+      console.error("Error updating user:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      if (error.message === "User not found") {
+        return res.status(404).json({ message: "User not found" });
+      }
+      res.status(500).json({ message: "Failed to update user", error: error.message });
+    }
+  });
+
+  app.delete('/api/users/:id', isAuthenticated, requireRole("admin"), async (req: any, res) => {
+    try {
+      if (req.user.id === req.params.id) {
+        return res.status(400).json({ message: "Cannot delete your own account" });
+      }
+
+      await storage.deleteUser(req.params.id);
+      res.json({ success: true, message: "User deleted successfully" });
+    } catch (error: any) {
+      console.error("Error deleting user:", error);
+      if (error.message === "User not found") {
+        return res.status(404).json({ message: "User not found" });
+      }
+      res.status(500).json({ message: "Failed to delete user", error: error.message });
+    }
+  });
+
   app.put('/api/users/:id/role', isAuthenticated, requireRole("admin"), async (req: any, res) => {
     try {
       const { role } = req.body;
@@ -72,6 +124,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true, message: "Role updated successfully" });
     } catch (error: any) {
       console.error("Error updating user role:", error);
+      if (error.message === "User not found") {
+        return res.status(404).json({ message: "User not found" });
+      }
       res.status(500).json({ message: error.message || "Failed to update user role" });
     }
   });
