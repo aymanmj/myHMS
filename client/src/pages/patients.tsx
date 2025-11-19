@@ -69,7 +69,13 @@ export default function Patients() {
   });
 
   const onSubmit = (data: InsertPatient) => {
-    addPatientMutation.mutate(data);
+    const cleanedData = Object.fromEntries(
+      Object.entries(data).map(([key, value]) => [
+        key,
+        value === "" ? undefined : value
+      ])
+    ) as InsertPatient;
+    addPatientMutation.mutate(cleanedData);
   };
 
   const filteredPatients = patients?.filter((patient: Patient) => {
@@ -306,10 +312,13 @@ export default function Patients() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>الحالة الاجتماعية</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value || undefined}>
+                          <Select 
+                            onValueChange={field.onChange} 
+                            value={field.value || undefined}
+                          >
                             <FormControl>
                               <SelectTrigger data-testid="select-marital-status">
-                                <SelectValue />
+                                <SelectValue placeholder="اختر الحالة الاجتماعية" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
@@ -408,10 +417,13 @@ export default function Patients() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>فصيلة الدم</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value || undefined}>
+                          <Select 
+                            onValueChange={field.onChange} 
+                            value={field.value || undefined}
+                          >
                             <FormControl>
                               <SelectTrigger data-testid="select-blood-type">
-                                <SelectValue />
+                                <SelectValue placeholder="اختر فصيلة الدم" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
