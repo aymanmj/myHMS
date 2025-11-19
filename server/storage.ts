@@ -60,7 +60,10 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getAllUsers(): Promise<User[]>;
   upsertUser(user: UpsertUser): Promise<User>;
+  createUser(user: UpsertUser): Promise<User>;
+  updateUser(id: string, user: Partial<UpsertUser>): Promise<User>;
   updateUserRole(id: string, role: string): Promise<void>;
+  deleteUser(id: string): Promise<void>;
 
   // ============================================
   // Patient operations
@@ -208,8 +211,39 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
+  async createUser(userData: UpsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(userData)
+      .returning();
+    return user;
+  }
+
+  async updateUser(id: string, userData: Partial<UpsertUser>): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({ ...userData, updatedAt: new Date() })
+      .where(eq(users.id, id))
+      .returning();
+    
+    if (!user) {
+      throw new Error("User not found");
+    }
+    return user;
+  }
+
   async updateUserRole(id: string, role: string): Promise<void> {
-    await db.update(users).set({ role, updatedAt: new Date() }).where(eq(users.id, id));
+    const result = await db.update(users).set({ role, updatedAt: new Date() }).where(eq(users.id, id)).returning();
+    if (result.length === 0) {
+      throw new Error("User not found");
+    }
+  }
+
+  async deleteUser(id: string): Promise<void> {
+    const result = await db.delete(users).where(eq(users.id, id)).returning();
+    if (result.length === 0) {
+      throw new Error("User not found");
+    }
   }
 
   // ============================================
