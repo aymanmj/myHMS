@@ -54,6 +54,8 @@ function updateUserSession(
 const ROLE_WHITELIST: Record<string, string> = {
   "admin@hospital.test": "admin",
   "admin@replit.com": "admin",
+  "admin@test.com": "admin",
+  "admin2@test.com": "admin",
   "doctor@hospital.test": "doctor",
   "nurse@hospital.test": "nurse",
   "pharmacist@hospital.test": "pharmacist",

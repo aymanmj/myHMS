@@ -439,7 +439,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/beds", isAuthenticated, requirePermission("admissions", "create"), async (req, res) => {
+  app.post("/api/beds", isAuthenticated, requirePermission("beds", "create"), async (req, res) => {
     try {
       const validatedData = insertBedSchema.parse(req.body);
       const bed = await storage.createBed(validatedData);
@@ -450,7 +450,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/beds/:id", isAuthenticated, requirePermission("admissions", "update"), async (req, res) => {
+  app.put("/api/beds/:id", isAuthenticated, requirePermission("beds", "update"), async (req, res) => {
     try {
       const validatedData = insertBedSchema.partial().parse(req.body);
       const bed = await storage.updateBed(req.params.id, validatedData);
@@ -458,6 +458,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error updating bed:", error);
       res.status(400).json({ message: error.message || "Failed to update bed" });
+    }
+  });
+
+  app.delete("/api/beds/:id", isAuthenticated, requirePermission("beds", "delete"), async (req, res) => {
+    try {
+      await storage.deleteBed(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      console.error("Error deleting bed:", error);
+      res.status(400).json({ message: error.message || "Failed to delete bed" });
     }
   });
 
@@ -493,6 +503,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error updating admission:", error);
       res.status(400).json({ message: error.message || "Failed to update admission" });
+    }
+  });
+
+  app.delete("/api/admissions/:id", isAuthenticated, requirePermission("admissions", "delete"), async (req, res) => {
+    try {
+      await storage.deleteAdmission(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      console.error("Error deleting admission:", error);
+      res.status(400).json({ message: error.message || "Failed to delete admission" });
     }
   });
 

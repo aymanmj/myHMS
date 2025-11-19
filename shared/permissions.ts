@@ -11,6 +11,7 @@ export const ROLE_PERMISSIONS = {
   admin: {
     patients: ["read", "create", "update", "delete"],
     appointments: ["read", "create", "update", "delete"],
+    beds: ["read", "create", "update", "delete"],
     admissions: ["read", "create", "update", "delete"],
     surgeries: ["read", "create", "update", "delete"],
     medications: ["read", "create", "update", "delete"],
@@ -24,6 +25,7 @@ export const ROLE_PERMISSIONS = {
   doctor: {
     patients: ["read", "create", "update"],
     appointments: ["read", "create", "update"],
+    beds: ["read"],
     admissions: ["read", "create", "update"],
     surgeries: ["read", "create", "update"],
     medications: ["read"],
@@ -37,6 +39,7 @@ export const ROLE_PERMISSIONS = {
   nurse: {
     patients: ["read", "update"],
     appointments: ["read", "update"],
+    beds: ["read", "update"],
     admissions: ["read", "update"],
     surgeries: ["read"],
     medications: ["read", "update"],
@@ -50,6 +53,7 @@ export const ROLE_PERMISSIONS = {
   pharmacist: {
     patients: ["read"],
     appointments: [],
+    beds: [],
     admissions: [],
     surgeries: [],
     medications: ["read", "create", "update"],
@@ -63,6 +67,7 @@ export const ROLE_PERMISSIONS = {
   lab_tech: {
     patients: ["read"],
     appointments: [],
+    beds: [],
     admissions: [],
     surgeries: [],
     medications: [],
@@ -76,6 +81,7 @@ export const ROLE_PERMISSIONS = {
   radiology_tech: {
     patients: ["read"],
     appointments: [],
+    beds: [],
     admissions: [],
     surgeries: [],
     medications: [],
@@ -89,6 +95,7 @@ export const ROLE_PERMISSIONS = {
   receptionist: {
     patients: ["read", "create", "update"],
     appointments: ["read", "create", "update", "delete"],
+    beds: ["read"],
     admissions: ["read"],
     surgeries: ["read"],
     medications: [],

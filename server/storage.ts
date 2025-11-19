@@ -95,11 +95,13 @@ export interface IStorage {
   getAvailableBeds(): Promise<Bed[]>;
   createBed(bed: InsertBed): Promise<Bed>;
   updateBed(id: string, bed: Partial<InsertBed>): Promise<Bed>;
+  deleteBed(id: string): Promise<void>;
   
   getAllAdmissions(): Promise<Admission[]>;
   getActiveAdmissions(): Promise<Admission[]>;
   createAdmission(admission: InsertAdmission): Promise<Admission>;
   updateAdmission(id: string, admission: Partial<InsertAdmission>): Promise<Admission>;
+  deleteAdmission(id: string): Promise<void>;
 
   // ============================================
   // Surgery operations
@@ -431,6 +433,10 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
+  async deleteBed(id: string): Promise<void> {
+    await db.delete(beds).where(eq(beds.id, id));
+  }
+
   async getAllAdmissions(): Promise<Admission[]> {
     return await db.select().from(admissions).orderBy(desc(admissions.admissionDate));
   }
@@ -451,6 +457,10 @@ export class DatabaseStorage implements IStorage {
       .where(eq(admissions.id, id))
       .returning();
     return updated;
+  }
+
+  async deleteAdmission(id: string): Promise<void> {
+    await db.delete(admissions).where(eq(admissions.id, id));
   }
 
   // ============================================

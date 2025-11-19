@@ -11,6 +11,7 @@ import PatientDetail from "@/pages/patient-detail";
 import Appointments from "@/pages/appointments";
 import Pharmacy from "@/pages/pharmacy";
 import Invoices from "@/pages/invoices";
+import Beds from "@/pages/beds";
 import Admissions from "@/pages/admissions";
 import Surgeries from "@/pages/surgeries";
 import Laboratory from "@/pages/laboratory";
@@ -35,6 +36,7 @@ function AppSidebar({ isCollapsed, onToggle }: { isCollapsed: boolean; onToggle:
     { title: "الرئيسية", url: "/", icon: Home, resource: null },
     { title: "المرضى", url: "/patients", icon: Users, resource: "patients" as const },
     { title: "المواعيد", url: "/appointments", icon: Calendar, resource: "appointments" as const },
+    { title: "الأسرّة", url: "/beds", icon: Activity, resource: "admissions" as const },
     { title: "التنويم", url: "/admissions", icon: Activity, resource: "admissions" as const },
     { title: "العمليات", url: "/surgeries", icon: Stethoscope, resource: "surgeries" as const },
     { title: "الصيدلية", url: "/pharmacy", icon: Pill, resource: "medications" as const },
@@ -121,11 +123,12 @@ function Router() {
           <Route path="/patients" component={Patients} />
           <Route path="/patients/:id" component={PatientDetail} />
           <Route path="/appointments" component={Appointments} />
+          <Route path="/beds" component={Beds} />
+          <Route path="/admissions" component={Admissions} />
+          <Route path="/surgeries" component={Surgeries} />
           <Route path="/pharmacy" component={Pharmacy} />
           <Route path="/prescriptions" component={Prescriptions} />
           <Route path="/invoices" component={Invoices} />
-          <Route path="/admissions" component={Admissions} />
-          <Route path="/surgeries" component={Surgeries} />
           <Route path="/laboratory" component={Laboratory} />
           <Route path="/radiology" component={Radiology} />
           <Route path="/hr" component={HR} />
