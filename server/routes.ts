@@ -131,6 +131,134 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/users/doctors", isAuthenticated, requirePermission("appointments", "read"), async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      const doctors = users.filter(u => u.role === "doctor");
+      res.json(doctors);
+    } catch (error: any) {
+      console.error("Error fetching doctors:", error);
+      res.status(500).json({ message: "Failed to fetch doctors" });
+    }
+  });
+
+  // ============================================
+  // Appointment routes
+  // ============================================
+  
+  app.get('/api/appointments', isAuthenticated, requirePermission("appointments", "read"), async (req, res) => {
+    try {
+      const appointments = await storage.getAllAppointments();
+      res.json(appointments);
+    } catch (error: any) {
+      console.error("Error fetching appointments:", error);
+      res.status(500).json({ message: "Failed to fetch appointments" });
+    }
+  });
+
+  app.get('/api/appointments/:id', isAuthenticated, requirePermission("appointments", "read"), async (req, res) => {
+    try {
+      const appointment = await storage.getAppointment(req.params.id);
+      if (!appointment) {
+        return res.status(404).json({ message: "Appointment not found" });
+      }
+      res.json(appointment);
+    } catch (error: any) {
+      console.error("Error fetching appointment:", error);
+      res.status(500).json({ message: "Failed to fetch appointment" });
+    }
+  });
+
+  app.get('/api/appointments/patient/:patientId', isAuthenticated, requirePermission("appointments", "read"), async (req, res) => {
+    try {
+      const appointments = await storage.getAppointmentsByPatient(req.params.patientId);
+      res.json(appointments);
+    } catch (error: any) {
+      console.error("Error fetching patient appointments:", error);
+      res.status(500).json({ message: "Failed to fetch patient appointments" });
+    }
+  });
+
+  app.get('/api/appointments/doctor/:doctorId', isAuthenticated, requirePermission("appointments", "read"), async (req, res) => {
+    try {
+      const appointments = await storage.getAppointmentsByDoctor(req.params.doctorId);
+      res.json(appointments);
+    } catch (error: any) {
+      console.error("Error fetching doctor appointments:", error);
+      res.status(500).json({ message: "Failed to fetch doctor appointments" });
+    }
+  });
+
+  app.post('/api/appointments', isAuthenticated, requirePermission("appointments", "create"), async (req: any, res) => {
+    try {
+      const { insertAppointmentSchema } = await import("@shared/schema");
+      const validatedData = insertAppointmentSchema.parse(req.body);
+      
+      const appointment = await storage.createAppointment({
+        ...validatedData,
+        createdBy: req.user.id,
+      });
+      res.status(201).json(appointment);
+    } catch (error: any) {
+      console.error("Error creating appointment:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create appointment", error: error.message });
+    }
+  });
+
+  app.put('/api/appointments/:id', isAuthenticated, requirePermission("appointments", "update"), async (req: any, res) => {
+    try {
+      const { insertAppointmentSchema } = await import("@shared/schema");
+      const validatedData = insertAppointmentSchema.partial().parse(req.body);
+      
+      const appointment = await storage.updateAppointment(req.params.id, validatedData);
+      res.json(appointment);
+    } catch (error: any) {
+      console.error("Error updating appointment:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      if (error.message === "Appointment not found") {
+        return res.status(404).json({ message: "Appointment not found" });
+      }
+      res.status(500).json({ message: "Failed to update appointment", error: error.message });
+    }
+  });
+
+  app.put('/api/appointments/:id/status', isAuthenticated, requirePermission("appointments", "update"), async (req: any, res) => {
+    try {
+      const { status } = req.body;
+      const validStatuses = ["scheduled", "confirmed", "completed", "cancelled", "no_show"];
+      if (!status || !validStatuses.includes(status)) {
+        return res.status(400).json({ message: "Invalid status" });
+      }
+      
+      const appointment = await storage.updateAppointment(req.params.id, { status });
+      res.json(appointment);
+    } catch (error: any) {
+      console.error("Error updating appointment status:", error);
+      if (error.message === "Appointment not found") {
+        return res.status(404).json({ message: "Appointment not found" });
+      }
+      res.status(500).json({ message: "Failed to update appointment status", error: error.message });
+    }
+  });
+
+  app.delete('/api/appointments/:id', isAuthenticated, requirePermission("appointments", "delete"), async (req, res) => {
+    try {
+      await storage.deleteAppointment(req.params.id);
+      res.json({ success: true, message: "Appointment deleted successfully" });
+    } catch (error: any) {
+      console.error("Error deleting appointment:", error);
+      if (error.message === "Appointment not found") {
+        return res.status(404).json({ message: "Appointment not found" });
+      }
+      res.status(500).json({ message: "Failed to delete appointment", error: error.message });
+    }
+  });
+
   // ============================================
   // Patient routes
   // ============================================
