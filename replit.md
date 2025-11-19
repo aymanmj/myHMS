@@ -6,6 +6,18 @@ A comprehensive bilingual (Arabic/English) Hospital Management System built as a
 
 The application serves healthcare professionals including administrators, doctors, nurses, pharmacists, laboratory technicians, radiologists, and receptionists with role-based access control.
 
+## Recent Updates (November 2025)
+
+**Audit Trail & Soft Delete Implementation:**
+- Implemented comprehensive soft delete mechanism across all 18 main tables
+- Added `deletedAt` timestamp field to all entities for soft deletion tracking
+- Created `audit_logs` table for complete audit trail of all operations (create, update, delete)
+- Implemented audit helper functions (`logCreate`, `logUpdate`, `logDelete`) in `server/audit.ts`
+- Integrated audit logging into CRUD operations for users, patients, and appointments (pattern can be extended to other entities)
+- Created admin-only Audit Logs viewer page (`/audit-logs`) with filtering and search capabilities
+- All SELECT queries updated to exclude soft-deleted records using `isNull(table.deletedAt)` pattern
+- Converted all DELETE operations to UPDATE operations that set `deletedAt` timestamp
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.

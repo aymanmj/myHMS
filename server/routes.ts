@@ -4,6 +4,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { requirePermission, requireRole } from "./middleware/rbac";
+import { logCreate, logUpdate, logDelete } from "./audit";
 import { 
   insertPatientSchema,
   insertAppointmentSchema,
@@ -66,6 +67,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = insertUserSchema.parse(req.body);
       
       const newUser = await storage.createUser(validatedData);
+      
+      await logCreate(req.user.claims.sub, "users", newUser.id, newUser);
+      
       res.status(201).json(newUser);
     } catch (error: any) {
       console.error("Error creating user:", error);
@@ -81,7 +85,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { insertUserSchema } = await import("@shared/schema");
       const validatedData = insertUserSchema.partial().parse(req.body);
 
+      const oldUser = await storage.getUser(req.params.id);
       const updatedUser = await storage.updateUser(req.params.id, validatedData);
+      
+      if (oldUser) {
+        await logUpdate(req.user.claims.sub, "users", req.params.id, oldUser, updatedUser);
+      }
+      
       res.json(updatedUser);
     } catch (error: any) {
       console.error("Error updating user:", error);
@@ -101,7 +111,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Cannot delete your own account" });
       }
 
-      await storage.deleteUser(req.params.id);
+      const user = await storage.getUser(req.params.id);
+      if (user) {
+        await storage.deleteUser(req.params.id);
+        await logDelete(req.user.claims.sub, "users", req.params.id, user);
+      } else {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
       res.json({ success: true, message: "User deleted successfully" });
     } catch (error: any) {
       console.error("Error deleting user:", error);
@@ -198,6 +215,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...validatedData,
         createdBy: req.user.id,
       });
+      
+      await logCreate(req.user.claims.sub, "appointments", appointment.id, appointment);
+      
       res.status(201).json(appointment);
     } catch (error: any) {
       console.error("Error creating appointment:", error);
@@ -213,7 +233,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { insertAppointmentSchema } = await import("@shared/schema");
       const validatedData = insertAppointmentSchema.partial().parse(req.body);
       
+      const oldAppointment = await storage.getAppointment(req.params.id);
       const appointment = await storage.updateAppointment(req.params.id, validatedData);
+      
+      if (oldAppointment) {
+        await logUpdate(req.user.claims.sub, "appointments", req.params.id, oldAppointment, appointment);
+      }
+      
       res.json(appointment);
     } catch (error: any) {
       console.error("Error updating appointment:", error);
@@ -246,10 +272,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/appointments/:id', isAuthenticated, requirePermission("appointments", "delete"), async (req, res) => {
+  app.delete('/api/appointments/:id', isAuthenticated, requirePermission("appointments", "delete"), async (req: any, res) => {
     try {
-      await storage.deleteAppointment(req.params.id);
-      res.json({ success: true, message: "Appointment deleted successfully" });
+      const appointment = await storage.getAppointment(req.params.id);
+      if (appointment) {
+        await storage.deleteAppointment(req.params.id);
+        await logDelete(req.user.claims.sub, "appointments", req.params.id, appointment);
+        res.json({ success: true, message: "Appointment deleted successfully" });
+      } else {
+        return res.status(404).json({ message: "Appointment not found" });
+      }
     } catch (error: any) {
       console.error("Error deleting appointment:", error);
       if (error.message === "Appointment not found") {
@@ -320,6 +352,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...validatedData,
         createdBy: req.user.claims.sub,
       });
+      
+      await logCreate(req.user.claims.sub, "patients", patient.id, patient);
+      
       res.status(201).json(patient);
     } catch (error: any) {
       console.error("Error creating patient:", error);
@@ -327,10 +362,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/patients/:id", isAuthenticated, requirePermission("patients", "update"), async (req, res) => {
+  app.put("/api/patients/:id", isAuthenticated, requirePermission("patients", "update"), async (req: any, res) => {
     try {
       const validatedData = insertPatientSchema.partial().parse(req.body);
+      const oldPatient = await storage.getPatient(req.params.id);
       const patient = await storage.updatePatient(req.params.id, validatedData);
+      
+      if (oldPatient) {
+        await logUpdate(req.user.claims.sub, "patients", req.params.id, oldPatient, patient);
+      }
+      
       res.json(patient);
     } catch (error: any) {
       console.error("Error updating patient:", error);
@@ -338,10 +379,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/patients/:id", isAuthenticated, requirePermission("patients", "delete"), async (req, res) => {
+  app.delete("/api/patients/:id", isAuthenticated, requirePermission("patients", "delete"), async (req: any, res) => {
     try {
-      await storage.deletePatient(req.params.id);
-      res.status(204).send();
+      const patient = await storage.getPatient(req.params.id);
+      if (patient) {
+        await storage.deletePatient(req.params.id);
+        await logDelete(req.user.claims.sub, "patients", req.params.id, patient);
+        res.status(204).send();
+      } else {
+        res.status(404).json({ message: "Patient not found" });
+      }
     } catch (error) {
       console.error("Error deleting patient:", error);
       res.status(500).json({ message: "Failed to delete patient" });
@@ -908,6 +955,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error updating invoice:", error);
       res.status(400).json({ message: error.message || "Failed to update invoice" });
+    }
+  });
+
+  // ============================================
+  // Audit Logs routes (Admin only)
+  // ============================================
+  app.get("/api/audit-logs", isAuthenticated, requireRole("admin"), async (req, res) => {
+    try {
+      const auditLogs = await storage.getAllAuditLogs();
+      res.json(auditLogs);
+    } catch (error) {
+      console.error("Error fetching audit logs:", error);
+      res.status(500).json({ message: "Failed to fetch audit logs" });
+    }
+  });
+
+  app.get("/api/audit-logs/user/:userId", isAuthenticated, requireRole("admin"), async (req, res) => {
+    try {
+      const auditLogs = await storage.getAuditLogsByUser(req.params.userId);
+      res.json(auditLogs);
+    } catch (error) {
+      console.error("Error fetching user audit logs:", error);
+      res.status(500).json({ message: "Failed to fetch user audit logs" });
+    }
+  });
+
+  app.get("/api/audit-logs/table/:tableName", isAuthenticated, requireRole("admin"), async (req, res) => {
+    try {
+      const auditLogs = await storage.getAuditLogsByTable(req.params.tableName);
+      res.json(auditLogs);
+    } catch (error) {
+      console.error("Error fetching table audit logs:", error);
+      res.status(500).json({ message: "Failed to fetch table audit logs" });
     }
   });
 

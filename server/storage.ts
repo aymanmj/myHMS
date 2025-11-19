@@ -850,6 +850,28 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return updated;
   }
+
+  // ============================================
+  // Audit Logs operations
+  // ============================================
+  
+  async getAllAuditLogs(): Promise<AuditLog[]> {
+    return await db.select().from(auditLogs).orderBy(desc(auditLogs.createdAt)).limit(1000);
+  }
+
+  async getAuditLogsByUser(userId: string): Promise<AuditLog[]> {
+    return await db.select().from(auditLogs).where(eq(auditLogs.userId, userId)).orderBy(desc(auditLogs.createdAt));
+  }
+
+  async getAuditLogsByTable(tableName: string): Promise<AuditLog[]> {
+    return await db.select().from(auditLogs).where(eq(auditLogs.tableName, tableName)).orderBy(desc(auditLogs.createdAt));
+  }
+
+  async getAuditLogsByRecord(tableName: string, recordId: string): Promise<AuditLog[]> {
+    return await db.select().from(auditLogs).where(
+      and(eq(auditLogs.tableName, tableName), eq(auditLogs.recordId, recordId))
+    ).orderBy(desc(auditLogs.createdAt));
+  }
 }
 
 export const storage = new DatabaseStorage();

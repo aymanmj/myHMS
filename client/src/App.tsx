@@ -4,6 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
+import AuditLogsPage from "@/pages/audit-logs";
 import Landing from "@/pages/landing";
 import Dashboard from "@/pages/dashboard";
 import Patients from "@/pages/patients";
@@ -21,7 +22,7 @@ import Payroll from "@/pages/payroll";
 import Prescriptions from "@/pages/prescriptions";
 import UsersManagement from "@/pages/users";
 import { useAuth } from "@/hooks/useAuth";
-import { Home, Users, Calendar, Activity, Pill, FileText, LogOut, Stethoscope, Building2, DollarSign, UserCog, Menu, ChevronLeft, ChevronRight, ClipboardList, Shield } from "lucide-react";
+import { Home, Users, Calendar, Activity, Pill, FileText, LogOut, Stethoscope, Building2, DollarSign, UserCog, Menu, ChevronLeft, ChevronRight, ClipboardList, Shield, ScrollText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useLocation } from "wouter";
@@ -47,6 +48,7 @@ function AppSidebar({ isCollapsed, onToggle }: { isCollapsed: boolean; onToggle:
     { title: "الرواتب", url: "/payroll", icon: DollarSign, resource: "payroll" as const },
     { title: "الفواتير", url: "/invoices", icon: FileText, resource: "invoices" as const },
     { title: "إدارة المستخدمين", url: "/users", icon: Shield, resource: null, adminOnly: true },
+    { title: "سجلات التدقيق", url: "/audit-logs", icon: ScrollText, resource: null, adminOnly: true },
   ];
 
   const menuItems = allMenuItems.filter(item => {
@@ -134,6 +136,7 @@ function Router() {
           <Route path="/hr" component={HR} />
           <Route path="/payroll" component={Payroll} />
           <Route path="/users" component={UsersManagement} />
+          <Route path="/audit-logs" component={AuditLogsPage} />
           {/* Add more routes here as pages are created */}
         </>
       )}

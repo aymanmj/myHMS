@@ -26,7 +26,7 @@ export async function logAudit({
       recordId,
       oldData: oldData || null,
       newData: newData || null,
-      timestamp: new Date(),
+      createdAt: new Date(),
     });
   } catch (error) {
     console.error("Failed to log audit:", error);
