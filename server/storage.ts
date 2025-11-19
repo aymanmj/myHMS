@@ -259,7 +259,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteUser(id: string): Promise<void> {
-    const result = await db.delete(users).where(eq(users.id, id)).returning();
+    const result = await db.update(users)
+      .set({ deletedAt: new Date() })
+      .where(eq(users.id, id))
+      .returning();
     if (result.length === 0) {
       throw new Error("User not found");
     }
@@ -341,7 +344,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deletePatient(id: string): Promise<void> {
-    await db.delete(patients).where(eq(patients.id, id));
+    const result = await db.update(patients)
+      .set({ deletedAt: new Date() })
+      .where(eq(patients.id, id))
+      .returning();
+    if (result.length === 0) {
+      throw new Error("Patient not found");
+    }
   }
 
   // ============================================
@@ -401,7 +410,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteAppointment(id: string): Promise<void> {
-    const result = await db.delete(appointments).where(eq(appointments.id, id)).returning();
+    const result = await db.update(appointments)
+      .set({ deletedAt: new Date() })
+      .where(eq(appointments.id, id))
+      .returning();
     if (result.length === 0) {
       throw new Error("Appointment not found");
     }
@@ -434,7 +446,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteBed(id: string): Promise<void> {
-    await db.delete(beds).where(eq(beds.id, id));
+    const result = await db.update(beds)
+      .set({ deletedAt: new Date() })
+      .where(eq(beds.id, id))
+      .returning();
+    if (result.length === 0) {
+      throw new Error("Bed not found");
+    }
   }
 
   async getAllAdmissions(): Promise<Admission[]> {
@@ -460,7 +478,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteAdmission(id: string): Promise<void> {
-    await db.delete(admissions).where(eq(admissions.id, id));
+    const result = await db.update(admissions)
+      .set({ deletedAt: new Date() })
+      .where(eq(admissions.id, id))
+      .returning();
+    if (result.length === 0) {
+      throw new Error("Admission not found");
+    }
   }
 
   // ============================================
@@ -491,8 +515,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteSurgery(id: string): Promise<void> {
-    const [deleted] = await db.delete(surgeries).where(eq(surgeries.id, id)).returning();
-    if (!deleted) {
+    const result = await db.update(surgeries)
+      .set({ deletedAt: new Date() })
+      .where(eq(surgeries.id, id))
+      .returning();
+    if (result.length === 0) {
       throw new Error("Surgery not found");
     }
   }
@@ -547,8 +574,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteMedication(id: string): Promise<void> {
-    const [deleted] = await db.delete(medications).where(eq(medications.id, id)).returning();
-    if (!deleted) {
+    const result = await db.update(medications)
+      .set({ deletedAt: new Date() })
+      .where(eq(medications.id, id))
+      .returning();
+    if (result.length === 0) {
       throw new Error("Medication not found");
     }
   }
@@ -576,8 +606,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deletePrescription(id: string): Promise<void> {
-    const [deleted] = await db.delete(prescriptions).where(eq(prescriptions.id, id)).returning();
-    if (!deleted) {
+    const result = await db.update(prescriptions)
+      .set({ deletedAt: new Date() })
+      .where(eq(prescriptions.id, id))
+      .returning();
+    if (result.length === 0) {
       throw new Error("Prescription not found");
     }
   }
