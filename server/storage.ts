@@ -67,6 +67,7 @@ export interface IStorage {
   // ============================================
   getAllPatients(): Promise<Patient[]>;
   getPatient(id: string): Promise<Patient | undefined>;
+  getPatientWithDetails(id: string): Promise<any>;
   searchPatients(query: string): Promise<Patient[]>;
   createPatient(patient: InsertPatient): Promise<Patient>;
   updatePatient(id: string, patient: Partial<InsertPatient>): Promise<Patient>;
@@ -222,6 +223,40 @@ export class DatabaseStorage implements IStorage {
   async getPatient(id: string): Promise<Patient | undefined> {
     const [patient] = await db.select().from(patients).where(eq(patients.id, id));
     return patient;
+  }
+
+  async getPatientWithDetails(id: string): Promise<any> {
+    const patient = await this.getPatient(id);
+    if (!patient) return undefined;
+
+    const [
+      patientAppointments,
+      patientPrescriptions,
+      patientAdmissions,
+      patientSurgeries,
+      patientLabTests,
+      patientRadiologyTests,
+      patientInvoices
+    ] = await Promise.all([
+      db.select().from(appointments).where(eq(appointments.patientId, id)).orderBy(desc(appointments.appointmentDate)),
+      db.select().from(prescriptions).where(eq(prescriptions.patientId, id)).orderBy(desc(prescriptions.prescriptionDate)),
+      db.select().from(admissions).where(eq(admissions.patientId, id)).orderBy(desc(admissions.admissionDate)),
+      db.select().from(surgeries).where(eq(surgeries.patientId, id)).orderBy(desc(surgeries.surgeryDate)),
+      db.select().from(labTests).where(eq(labTests.patientId, id)).orderBy(desc(labTests.requestDate)),
+      db.select().from(radiologyTests).where(eq(radiologyTests.patientId, id)).orderBy(desc(radiologyTests.requestDate)),
+      db.select().from(invoices).where(eq(invoices.patientId, id)).orderBy(desc(invoices.invoiceDate))
+    ]);
+
+    return {
+      ...patient,
+      appointments: patientAppointments,
+      prescriptions: patientPrescriptions,
+      admissions: patientAdmissions,
+      surgeries: patientSurgeries,
+      labTests: patientLabTests,
+      radiologyTests: patientRadiologyTests,
+      invoices: patientInvoices
+    };
   }
 
   async searchPatients(query: string): Promise<Patient[]> {
