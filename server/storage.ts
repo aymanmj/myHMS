@@ -490,6 +490,13 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
+  async deleteSurgery(id: string): Promise<void> {
+    const [deleted] = await db.delete(surgeries).where(eq(surgeries.id, id)).returning();
+    if (!deleted) {
+      throw new Error("Surgery not found");
+    }
+  }
+
   // ============================================
   // Pharmacy operations
   // ============================================

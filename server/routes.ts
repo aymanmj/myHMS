@@ -554,6 +554,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/surgeries/:id", isAuthenticated, requirePermission("surgeries", "delete"), async (req, res) => {
+    try {
+      await storage.deleteSurgery(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      console.error("Error deleting surgery:", error);
+      if (error.message === "Surgery not found") {
+        res.status(404).json({ message: "Surgery not found" });
+      } else {
+        res.status(500).json({ message: "Failed to delete surgery" });
+      }
+    }
+  });
+
   // ============================================
   // Pharmacy routes
   // ============================================

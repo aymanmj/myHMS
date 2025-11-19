@@ -6,13 +6,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertSurgerySchema, type InsertSurgery, type Patient } from "@shared/schema";
-import { useState } from "react";
-import { Plus, Scissors, Calendar, CheckCircle, AlertCircle } from "lucide-react";
+import { insertSurgerySchema, type InsertSurgery, type Patient, type Surgery } from "@shared/schema";
+import { useState, useEffect } from "react";
+import { Plus, Scissors, Calendar, CheckCircle, AlertCircle, Edit, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
@@ -20,8 +21,10 @@ import { usePermissions } from "@/hooks/usePermissions";
 
 export default function Surgeries() {
   const { toast } = useToast();
-  const { canCreate } = usePermissions();
+  const { canCreate, canUpdate, canDelete } = usePermissions();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [editingSurgery, setEditingSurgery] = useState<Surgery | null>(null);
+  const [deletingSurgeryId, setDeletingSurgeryId] = useState<string | null>(null);
 
   const { data: surgeries, isLoading } = useQuery({
     queryKey: ["/api/surgeries"],
@@ -42,6 +45,7 @@ export default function Surgeries() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/surgeries"] });
       setIsAddDialogOpen(false);
+      form.reset();
       toast({
         title: "تم بنجاح",
         description: "تم إضافة العملية الجراحية بنجاح",
@@ -56,6 +60,48 @@ export default function Surgeries() {
     },
   });
 
+  const editSurgeryMutation = useMutation({
+    mutationFn: async (data: { id: string; surgery: Partial<InsertSurgery> }) => {
+      return await apiRequest("PUT", `/api/surgeries/${data.id}`, data.surgery);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/surgeries"] });
+      setEditingSurgery(null);
+      toast({
+        title: "تم بنجاح",
+        description: "تم تحديث العملية بنجاح",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "خطأ",
+        description: error.message || "فشل في تحديث العملية",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteSurgeryMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return await apiRequest("DELETE", `/api/surgeries/${id}`, undefined);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/surgeries"] });
+      setDeletingSurgeryId(null);
+      toast({
+        title: "تم بنجاح",
+        description: "تم حذف العملية بنجاح",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "خطأ",
+        description: error.message || "فشل في حذف العملية",
+        variant: "destructive",
+      });
+    },
+  });
+
   const form = useForm<InsertSurgery>({
     resolver: zodResolver(insertSurgerySchema),
     defaultValues: {
@@ -65,11 +111,74 @@ export default function Surgeries() {
       operatingRoom: "",
       description: "",
       status: "scheduled",
+      surgeryDate: new Date(),
     },
   });
 
+  const editForm = useForm<InsertSurgery>({
+    resolver: zodResolver(insertSurgerySchema),
+    defaultValues: {
+      patientId: "",
+      surgeonId: "",
+      surgeryType: "",
+      operatingRoom: "",
+      description: "",
+      status: "scheduled",
+      surgeryDate: new Date(),
+    },
+  });
+
+  useEffect(() => {
+    if (editingSurgery) {
+      const surgeryDateValue = editingSurgery.surgeryDate 
+        ? new Date(editingSurgery.surgeryDate)
+        : new Date();
+      
+      editForm.reset({
+        patientId: editingSurgery.patientId,
+        surgeonId: editingSurgery.surgeonId,
+        surgeryType: editingSurgery.surgeryType,
+        operatingRoom: editingSurgery.operatingRoom,
+        description: editingSurgery.description || "",
+        status: editingSurgery.status,
+        surgeryDate: surgeryDateValue as any,
+      });
+    }
+  }, [editingSurgery]);
+
   const onSubmit = (data: InsertSurgery) => {
-    addSurgeryMutation.mutate(data);
+    const cleanedData = {
+      ...data,
+      description: data.description || undefined,
+    };
+    addSurgeryMutation.mutate(cleanedData);
+  };
+
+  const onEditSubmit = (data: InsertSurgery) => {
+    if (!editingSurgery) return;
+    
+    let surgeryDateValue: string | Date = data.surgeryDate;
+    if (data.surgeryDate instanceof Date && !isNaN(data.surgeryDate.getTime())) {
+      surgeryDateValue = data.surgeryDate.toISOString();
+    } else if (typeof data.surgeryDate === 'string') {
+      surgeryDateValue = new Date(data.surgeryDate).toISOString();
+    }
+    
+    const cleanedData = {
+      ...data,
+      description: data.description || undefined,
+      surgeryDate: surgeryDateValue,
+    };
+    editSurgeryMutation.mutate({
+      id: editingSurgery.id,
+      surgery: cleanedData as any,
+    });
+  };
+
+  const handleDelete = () => {
+    if (!deletingSurgeryId) return;
+    const id = deletingSurgeryId;
+    deleteSurgeryMutation.mutate(id);
   };
 
   const getStatusBadge = (status: string) => {
@@ -180,6 +289,25 @@ export default function Surgeries() {
                   />
                 </div>
 
+                <FormField
+                  control={form.control}
+                  name="surgeryDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>موعد العملية</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="datetime-local"
+                          value={field.value instanceof Date ? field.value.toISOString().slice(0, 16) : ""}
+                          onChange={(e) => field.onChange(new Date(e.target.value))}
+                          data-testid="input-surgery-date"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 <div className="grid gap-4 md:grid-cols-2">
                   <FormField
                     control={form.control}
@@ -246,6 +374,210 @@ export default function Surgeries() {
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Edit Dialog */}
+      <Dialog open={!!editingSurgery} onOpenChange={(open) => !open && setEditingSurgery(null)}>
+        <DialogContent className="max-w-2xl" dir="rtl">
+          <DialogHeader>
+            <DialogTitle>تعديل العملية الجراحية</DialogTitle>
+            <DialogDescription>
+              تحديث بيانات العملية
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...editForm}>
+            <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <FormField
+                  control={editForm.control}
+                  name="patientId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>المريض</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value || undefined}>
+                        <FormControl>
+                          <SelectTrigger data-testid="edit-select-patient">
+                            <SelectValue placeholder="اختر المريض" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {patientsList.map((patient: Patient) => (
+                            <SelectItem key={patient.id} value={patient.id}>
+                              {patient.firstNameAr} {patient.familyNameAr}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={editForm.control}
+                  name="surgeonId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>الجراح الرئيسي</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value || undefined}>
+                        <FormControl>
+                          <SelectTrigger data-testid="edit-select-surgeon">
+                            <SelectValue placeholder="اختر الجراح" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {surgeons.map((surgeon: any) => (
+                            <SelectItem key={surgeon.id} value={surgeon.id}>
+                              د. {surgeon.firstNameAr} {surgeon.familyNameAr}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={editForm.control}
+                name="surgeryDate"
+                render={({ field }) => {
+                  const dateValue = field.value instanceof Date && !isNaN(field.value.getTime())
+                    ? field.value.toISOString().slice(0, 16)
+                    : "";
+                  
+                  return (
+                    <FormItem>
+                      <FormLabel>موعد العملية</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="datetime-local"
+                          value={dateValue}
+                          onChange={(e) => {
+                            const newDate = e.target.value ? new Date(e.target.value) : new Date();
+                            field.onChange(newDate);
+                          }}
+                          data-testid="edit-input-surgery-date"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
+              />
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <FormField
+                  control={editForm.control}
+                  name="surgeryType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>نوع العملية</FormLabel>
+                      <FormControl>
+                        <Input {...field} data-testid="edit-input-surgery-type" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={editForm.control}
+                  name="operatingRoom"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>غرفة العمليات</FormLabel>
+                      <FormControl>
+                        <Input {...field} data-testid="edit-input-operating-room" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={editForm.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>الحالة</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value || undefined}>
+                      <FormControl>
+                        <SelectTrigger data-testid="edit-select-status">
+                          <SelectValue placeholder="اختر الحالة" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="scheduled">مجدولة</SelectItem>
+                        <SelectItem value="in_progress">جارية</SelectItem>
+                        <SelectItem value="completed">مكتملة</SelectItem>
+                        <SelectItem value="cancelled">ملغية</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={editForm.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>الوصف</FormLabel>
+                    <FormControl>
+                      <Input {...field} value={field.value || ""} data-testid="edit-input-description" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="flex justify-end gap-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setEditingSurgery(null)}
+                  data-testid="edit-button-cancel"
+                >
+                  إلغاء
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={editSurgeryMutation.isPending}
+                  data-testid="edit-button-submit"
+                >
+                  {editSurgeryMutation.isPending ? "جاري التحديث..." : "تحديث العملية"}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deletingSurgeryId} onOpenChange={(open) => !open && setDeletingSurgeryId(null)}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>تأكيد الحذف</AlertDialogTitle>
+            <AlertDialogDescription>
+              هل أنت متأكد من حذف هذه العملية الجراحية؟ هذا الإجراء لا يمكن التراجع عنه.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="delete-button-cancel">إلغاء</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={deleteSurgeryMutation.isPending}
+              data-testid="delete-button-confirm"
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {deleteSurgeryMutation.isPending ? "جاري الحذف..." : "حذف"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Statistics */}
       <div className="grid gap-4 md:grid-cols-4">
@@ -321,6 +653,7 @@ export default function Surgeries() {
                 <TableHead>غرفة العمليات</TableHead>
                 <TableHead>التاريخ</TableHead>
                 <TableHead>الحالة</TableHead>
+                <TableHead>الإجراءات</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -342,6 +675,30 @@ export default function Surgeries() {
                       {surgery.surgeryDate && format(new Date(surgery.surgeryDate), "dd/MM/yyyy HH:mm", { locale: ar })}
                     </TableCell>
                     <TableCell data-testid={`cell-status-${surgery.id}`}>{getStatusBadge(surgery.status)}</TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        {canUpdate("surgeries") && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setEditingSurgery(surgery)}
+                            data-testid={`button-edit-${surgery.id}`}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        )}
+                        {canDelete("surgeries") && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setDeletingSurgeryId(surgery.id)}
+                            data-testid={`button-delete-${surgery.id}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
                   </TableRow>
                 );
               })}
