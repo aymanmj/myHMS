@@ -12,7 +12,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertPatientSchema, type Patient, type InsertPatient } from "@shared/schema";
 import { useState } from "react";
-import { Search, Plus, Edit, Eye } from "lucide-react";
+import { useLocation } from "wouter";
+import { Search, Plus, Edit, Eye, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -20,6 +21,7 @@ import { usePermissions } from "@/hooks/usePermissions";
 export default function Patients() {
   const { toast } = useToast();
   const { canCreate, canDelete } = usePermissions();
+  const [, navigate] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
@@ -564,8 +566,18 @@ export default function Patients() {
                       <Button
                         variant="ghost"
                         size="icon"
+                        onClick={() => navigate(`/patients/${patient.id}`)}
+                        data-testid={`button-view-details-${patient.id}`}
+                        title="عرض التفاصيل"
+                      >
+                        <FileText className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
                         onClick={() => setSelectedPatient(patient)}
                         data-testid={`button-view-${patient.id}`}
+                        title="عرض سريع"
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
@@ -573,6 +585,7 @@ export default function Patients() {
                         variant="ghost"
                         size="icon"
                         data-testid={`button-edit-${patient.id}`}
+                        title="تعديل"
                       >
                         <Edit className="h-4 w-4" />
                       </Button>

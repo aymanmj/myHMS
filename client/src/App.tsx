@@ -7,6 +7,7 @@ import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
 import Dashboard from "@/pages/dashboard";
 import Patients from "@/pages/patients";
+import PatientDetail from "@/pages/patient-detail";
 import Appointments from "@/pages/appointments";
 import Pharmacy from "@/pages/pharmacy";
 import Invoices from "@/pages/invoices";
@@ -114,6 +115,7 @@ function Router() {
         <>
           <Route path="/" component={Dashboard} />
           <Route path="/patients" component={Patients} />
+          <Route path="/patients/:id" component={PatientDetail} />
           <Route path="/appointments" component={Appointments} />
           <Route path="/pharmacy" component={Pharmacy} />
           <Route path="/prescriptions" component={Prescriptions} />
