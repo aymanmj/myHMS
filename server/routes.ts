@@ -89,6 +89,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/patients/:id/details", isAuthenticated, requirePermission("patients", "read"), async (req, res) => {
+    try {
+      const { id } = req.params;
+      const patientDetails = await storage.getPatientWithDetails(id);
+      if (!patientDetails) {
+        return res.status(404).json({ message: "Patient not found" });
+      }
+      res.json(patientDetails);
+    } catch (error) {
+      console.error("Error fetching patient details:", error);
+      res.status(500).json({ message: "Failed to fetch patient details" });
+    }
+  });
+
   app.get("/api/patients/search", isAuthenticated, requirePermission("patients", "read"), async (req, res) => {
     try {
       const query = req.query.q as string;
