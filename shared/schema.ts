@@ -39,6 +39,7 @@ export const users = pgTable("users", {
   role: varchar("role").notNull().default("receptionist"), // admin, doctor, nurse, pharmacist, lab_tech, radiology_tech, receptionist
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+  deletedAt: timestamp("deleted_at"),
 });
 
 export const insertUserSchema = createInsertSchema(users, {
@@ -51,6 +52,34 @@ export const insertUserSchema = createInsertSchema(users, {
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
+
+// ============================================
+// Audit Trail System
+// ============================================
+
+export const auditActionEnum = pgEnum("audit_action", ["create", "update", "delete", "restore"]);
+
+export const auditLogs = pgTable("audit_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id),
+  action: auditActionEnum("action").notNull(),
+  tableName: varchar("table_name").notNull(),
+  recordId: varchar("record_id").notNull(),
+  oldData: jsonb("old_data"),
+  newData: jsonb("new_data"),
+  ipAddress: varchar("ip_address"),
+  userAgent: text("user_agent"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_audit_user").on(table.userId),
+  index("idx_audit_table").on(table.tableName),
+  index("idx_audit_record").on(table.recordId),
+  index("idx_audit_created").on(table.createdAt),
+]);
+
+export const insertAuditLogSchema = createInsertSchema(auditLogs).omit({ id: true, createdAt: true });
+export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
+export type AuditLog = typeof auditLogs.$inferSelect;
 
 // ============================================
 // Enums
@@ -131,6 +160,7 @@ export const patients = pgTable("patients", {
   createdBy: varchar("created_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+  deletedAt: timestamp("deleted_at"),
 });
 
 export const insertPatientSchema = createInsertSchema(patients, {
@@ -168,6 +198,7 @@ export const appointments = pgTable("appointments", {
   createdBy: varchar("created_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+  deletedAt: timestamp("deleted_at"),
 });
 
 export const insertAppointmentSchema = createInsertSchema(appointments).omit({
@@ -197,6 +228,7 @@ export const beds = pgTable("beds", {
   
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+  deletedAt: timestamp("deleted_at"),
 });
 
 export const insertBedSchema = createInsertSchema(beds).omit({
@@ -228,6 +260,7 @@ export const admissions = pgTable("admissions", {
   createdBy: varchar("created_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+  deletedAt: timestamp("deleted_at"),
 });
 
 export const insertAdmissionSchema = createInsertSchema(admissions).omit({
@@ -269,6 +302,7 @@ export const surgeries = pgTable("surgeries", {
   createdBy: varchar("created_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+  deletedAt: timestamp("deleted_at"),
 });
 
 export const insertSurgerySchema = createInsertSchema(surgeries).omit({
@@ -302,6 +336,7 @@ export const medications = pgTable("medications", {
   
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+  deletedAt: timestamp("deleted_at"),
 });
 
 export const insertMedicationSchema = createInsertSchema(medications).omit({
@@ -330,6 +365,7 @@ export const prescriptions = pgTable("prescriptions", {
   
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+  deletedAt: timestamp("deleted_at"),
 });
 
 const medicationItemSchema = z.object({
@@ -376,6 +412,7 @@ export const labTests = pgTable("lab_tests", {
   
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+  deletedAt: timestamp("deleted_at"),
 });
 
 export const insertLabTestSchema = createInsertSchema(labTests).omit({
@@ -412,6 +449,7 @@ export const radiologyTests = pgTable("radiology_tests", {
   
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+  deletedAt: timestamp("deleted_at"),
 });
 
 export const insertRadiologyTestSchema = createInsertSchema(radiologyTests).omit({
@@ -471,6 +509,7 @@ export const staff = pgTable("staff", {
   
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+  deletedAt: timestamp("deleted_at"),
 });
 
 export const insertStaffSchema = createInsertSchema(staff).omit({
@@ -494,6 +533,7 @@ export const attendance = pgTable("attendance", {
   notes: text("notes"),
   
   createdAt: timestamp("created_at").defaultNow(),
+  deletedAt: timestamp("deleted_at"),
 });
 
 export const insertAttendanceSchema = createInsertSchema(attendance).omit({
@@ -520,6 +560,7 @@ export const leaves = pgTable("leaves", {
   
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+  deletedAt: timestamp("deleted_at"),
 });
 
 export const insertLeaveSchema = createInsertSchema(leaves).omit({
@@ -543,6 +584,7 @@ export const shifts = pgTable("shifts", {
   shiftType: varchar("shift_type").notNull(), // morning, evening, night
   
   createdAt: timestamp("created_at").defaultNow(),
+  deletedAt: timestamp("deleted_at"),
 });
 
 export const insertShiftSchema = createInsertSchema(shifts).omit({
@@ -577,6 +619,7 @@ export const payroll = pgTable("payroll", {
   
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+  deletedAt: timestamp("deleted_at"),
 });
 
 export const insertPayrollSchema = createInsertSchema(payroll).omit({
@@ -617,6 +660,7 @@ export const invoices = pgTable("invoices", {
   createdBy: varchar("created_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+  deletedAt: timestamp("deleted_at"),
 });
 
 export const insertInvoiceSchema = createInsertSchema(invoices).omit({
